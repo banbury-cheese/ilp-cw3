@@ -5,6 +5,7 @@ import NaturalLanguageInput from '@/components/NaturalLanguageInput';
 import DispatchListEditor from '@/components/DispatchListEditor';
 import MapView from '@/components/MapView';
 import PlanSummary from '@/components/PlanSummary';
+import ExplainPlan from '@/components/ExplainPlan';
 import {
   MedDispatchRec,
   DispatchParseResult,
@@ -54,6 +55,49 @@ export default function Home() {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.details || 'Failed to parse dispatches');
+      }
+
+      const result: DispatchParseResult = await response.json();
+      setDispatches(result.dispatches);
+      setNotes(result.notes);
+      setWarnings(result.warnings);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Convert prescription text to dispatches
+  const handlePrescriptionConvert = async (prescriptionText: string) => {
+    setIsLoading(true);
+    setError(null);
+    setAvailableDrones(null);
+    setPlan(null);
+    setGeojson(null);
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const defaultTime = `${String(now.getHours()).padStart(2, '0')}:${String(
+        now.getMinutes()
+      ).padStart(2, '0')}`;
+      const idBase = Date.now() % 10000;
+
+      const response = await fetch('/api/prescriptions/convert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: prescriptionText,
+          defaultDate: today,
+          defaultTime,
+          idBase
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || 'Failed to convert prescription');
       }
 
       const result: DispatchParseResult = await response.json();
@@ -182,7 +226,7 @@ export default function Home() {
               </h1>
               <p className="text-lg text-gray-600 mb-8">
                 Turn vague delivery requests into precise drone dispatches. Stop
-                wrestling with JSON — describe what you need in plain English.
+                wrestling with JSON — describe what you need in plain English or upload a prescription.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <a
@@ -281,7 +325,7 @@ export default function Home() {
 
       {/* Features */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-4 gap-6">
           <div className="bg-white rounded-xl p-6 border border-gray-100">
             <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
               <svg
@@ -301,7 +345,7 @@ export default function Home() {
             <h3 className="font-semibold text-gray-900 mb-2">AI-Powered</h3>
             <p className="text-sm text-gray-600">
               Natural language processing turns your delivery requests into
-              structured dispatch data automatically.
+              structured dispatch data.
             </p>
           </div>
           <div className="bg-white rounded-xl p-6 border border-gray-100">
@@ -316,14 +360,13 @@ export default function Home() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-2">Validated</h3>
+            <h3 className="font-semibold text-gray-900 mb-2">Prescription Upload</h3>
             <p className="text-sm text-gray-600">
-              Built-in validation ensures your dispatches meet all requirements
-              before sending to the ILP backend.
+              Upload PDF or image prescriptions and convert them to dispatches automatically.
             </p>
           </div>
           <div className="bg-white rounded-xl p-6 border border-gray-100">
@@ -342,10 +385,30 @@ export default function Home() {
                 />
               </svg>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-2">Visualized</h3>
+            <h3 className="font-semibold text-gray-900 mb-2">Route Visualization</h3>
             <p className="text-sm text-gray-600">
-              See your planned routes on an interactive map with service points
-              and restricted areas highlighted.
+              See planned routes on an interactive map with service points and restricted areas.
+            </p>
+          </div>
+          <div className="bg-white rounded-xl p-6 border border-gray-100">
+            <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center mb-4">
+              <svg
+                className="w-5 h-5 text-amber-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-2">AI Explanations</h3>
+            <p className="text-sm text-gray-600">
+              Get detailed explanations of why specific drones and routes were chosen.
             </p>
           </div>
         </div>
@@ -402,6 +465,7 @@ export default function Home() {
           <div>
             <NaturalLanguageInput
               onGenerate={handleGenerate}
+              onPrescriptionConvert={handlePrescriptionConvert}
               isLoading={isLoading}
             />
           </div>
@@ -429,6 +493,7 @@ export default function Home() {
               showRestrictedAreas={true}
             />
             <PlanSummary plan={plan} />
+            <ExplainPlan dispatches={dispatches} plan={plan} />
           </div>
         </div>
       </div>
