@@ -163,7 +163,7 @@ export default function MapView({
   }, [geojson, deliveryPoints, showServicePoints, showRestrictedAreas]);
 
   return (
-    <div className="card" style={{ padding: '1rem' }}>
+    <div className="card">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-section">ROUTE MAP</h2>
         <div className="flex items-center gap-4 text-micro" style={{ color: 'var(--grey-dark)' }}>

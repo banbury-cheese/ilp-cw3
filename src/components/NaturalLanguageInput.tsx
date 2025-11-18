@@ -49,7 +49,7 @@ export default function NaturalLanguageInput({
   };
 
   return (
-    <div className="card" style={{ padding: '1.5rem' }}>
+    <div className="card">
       <h2 className="text-section mb-4">
         CREATE DISPATCHES
       </h2>

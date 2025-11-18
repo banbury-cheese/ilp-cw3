@@ -5,7 +5,6 @@ import NaturalLanguageInput from '@/components/NaturalLanguageInput';
 import DispatchListEditor from '@/components/DispatchListEditor';
 import MapView from '@/components/MapView';
 import PlanSummary from '@/components/PlanSummary';
-import ExplainPlan from '@/components/ExplainPlan';
 import {
   MedDispatchRec,
   DispatchParseResult,
@@ -264,7 +263,6 @@ export default function Home() {
               showRestrictedAreas={true}
             />
             <PlanSummary plan={plan} />
-            <ExplainPlan dispatches={dispatches} plan={plan} />
           </div>
         </div>
       </div>

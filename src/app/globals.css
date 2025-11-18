@@ -199,6 +199,15 @@ button {
   border: 1px solid var(--grey-light);
   border-radius: 0;
   box-shadow: var(--shadow-subtle);
+  padding: 1.5rem;
+}
+
+.card-compact {
+  background: var(--white);
+  border: 1px solid var(--grey-light);
+  border-radius: 0;
+  box-shadow: var(--shadow-subtle);
+  padding: 1rem;
 }
 
 /* Buttons */
@@ -495,4 +504,162 @@ button {
 
 .mono {
   font-family: var(--font-mono);
+}
+
+/* Empty state styling */
+.empty-state {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.empty-state-icon {
+  height: 48px;
+  width: 48px;
+  margin: 0 auto 1rem;
+  color: var(--grey-dark);
+}
+
+/* Consistent gap utilities */
+.gap-sm { gap: 0.5rem; }
+.gap-md { gap: 1rem; }
+.gap-lg { gap: 1.5rem; }
+
+/* =============================================================================
+   Markdown Prose Styles
+   ============================================================================= */
+
+.prose-content {
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--charcoal);
+}
+
+.prose-content h1,
+.prose-content h2,
+.prose-content h3,
+.prose-content h4,
+.prose-content h5,
+.prose-content h6 {
+  font-weight: 700;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+  color: var(--black);
+}
+
+.prose-content h1 {
+  font-size: 1.5rem;
+}
+
+.prose-content h2 {
+  font-size: 1.25rem;
+}
+
+.prose-content h3 {
+  font-size: 1.1rem;
+}
+
+.prose-content h4,
+.prose-content h5,
+.prose-content h6 {
+  font-size: 1rem;
+}
+
+.prose-content p {
+  margin-bottom: 1em;
+}
+
+.prose-content p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-content ul,
+.prose-content ol {
+  margin-bottom: 1em;
+  padding-left: 1.5em;
+}
+
+.prose-content li {
+  margin-bottom: 0.25em;
+}
+
+.prose-content ul {
+  list-style-type: disc;
+}
+
+.prose-content ol {
+  list-style-type: decimal;
+}
+
+.prose-content strong {
+  font-weight: 700;
+}
+
+.prose-content em {
+  font-style: italic;
+}
+
+.prose-content code {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  background: var(--grey-light);
+  padding: 0.2em 0.4em;
+  border-radius: 2px;
+}
+
+.prose-content pre {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  background: var(--charcoal);
+  color: var(--white);
+  padding: 1rem;
+  overflow-x: auto;
+  margin-bottom: 1em;
+}
+
+.prose-content pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.prose-content blockquote {
+  border-left: 3px solid var(--blue);
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-bottom: 1em;
+  color: var(--grey-dark);
+  font-style: italic;
+}
+
+.prose-content hr {
+  border: none;
+  border-top: 1px solid var(--grey-light);
+  margin: 1.5em 0;
+}
+
+.prose-content a {
+  color: var(--blue);
+  text-decoration: underline;
+}
+
+.prose-content a:hover {
+  opacity: 0.8;
+}
+
+.prose-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1em;
+  font-size: 0.8em;
+}
+
+.prose-content th,
+.prose-content td {
+  border: 1px solid var(--grey-light);
+  padding: 0.5em;
+  text-align: left;
+}
+
+.prose-content th {
+  background: var(--grey-input);
+  font-weight: 700;
 }

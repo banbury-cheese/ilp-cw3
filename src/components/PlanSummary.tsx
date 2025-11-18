@@ -24,7 +24,7 @@ const droneInfo: Record<
 export default function PlanSummary({ plan }: PlanSummaryProps) {
   if (!plan) {
     return (
-      <div className="card" style={{ padding: '1.5rem' }}>
+      <div className="card">
         <h2 className="text-section mb-4">PLAN SUMMARY</h2>
         <div className="text-center" style={{ padding: '2rem 0' }}>
           <svg
@@ -55,7 +55,7 @@ export default function PlanSummary({ plan }: PlanSummaryProps) {
   );
 
   return (
-    <div className="card" style={{ padding: '1.5rem' }}>
+    <div className="card">
       <h2 className="text-section mb-4">PLAN SUMMARY</h2>
 
       {/* Key metrics */}

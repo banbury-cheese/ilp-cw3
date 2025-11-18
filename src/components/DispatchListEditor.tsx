@@ -65,11 +65,11 @@ export default function DispatchListEditor({
 
   if (dispatches.length === 0) {
     return (
-      <div className="card" style={{ padding: '1.5rem' }}>
+      <div className="card">
         <h2 className="text-section mb-4">
           STRUCTURED DISPATCHES
         </h2>
-        <div className="text-center" style={{ padding: '3rem 0' }}>
+        <div className="text-center" style={{ padding: '2rem 0' }}>
           <svg
             className="mx-auto mb-4"
             style={{ height: '48px', width: '48px', color: 'var(--grey-dark)' }}
@@ -93,7 +93,7 @@ export default function DispatchListEditor({
   }
 
   return (
-    <div className="card" style={{ padding: '1.5rem' }}>
+    <div className="card">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-section">
           STRUCTURED DISPATCHES
