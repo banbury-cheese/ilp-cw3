@@ -65,14 +65,14 @@ export default function DispatchListEditor({
 
   if (dispatches.length === 0) {
     return (
-      <div className="card" style={{ padding: 'var(--space-6)' }}>
-        <h2 className="text-title" style={{ marginBottom: 'var(--space-4)' }}>
-          Structured Dispatches
+      <div className="card" style={{ padding: '1.5rem' }}>
+        <h2 className="text-section mb-4">
+          STRUCTURED DISPATCHES
         </h2>
-        <div className="text-center" style={{ padding: 'var(--space-12) 0', color: 'var(--color-text-muted)' }}>
+        <div className="text-center" style={{ padding: '3rem 0' }}>
           <svg
             className="mx-auto mb-4"
-            style={{ height: '48px', width: '48px', color: 'var(--color-border)' }}
+            style={{ height: '48px', width: '48px', color: 'var(--grey-dark)' }}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -84,7 +84,7 @@ export default function DispatchListEditor({
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <p style={{ fontSize: 'var(--text-sm)' }}>
+          <p className="text-body">
             No dispatches yet. Use natural language input to generate them.
           </p>
         </div>
@@ -93,31 +93,22 @@ export default function DispatchListEditor({
   }
 
   return (
-    <div className="card" style={{ padding: 'var(--space-6)' }}>
-      <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-4)' }}>
-        <h2 className="text-title">
-          Structured Dispatches
+    <div className="card" style={{ padding: '1.5rem' }}>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-section">
+          STRUCTURED DISPATCHES
         </h2>
-        <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-          {dispatches.length} dispatch{dispatches.length !== 1 ? 'es' : ''}
+        <span className="text-mono" style={{ color: 'var(--grey-dark)' }}>
+          {dispatches.length} DISPATCH{dispatches.length !== 1 ? 'ES' : ''}
         </span>
       </div>
 
       {/* Notes */}
       {notes.length > 0 && (
-        <div
-          style={{
-            marginBottom: 'var(--space-4)',
-            padding: 'var(--space-3)',
-            background: 'var(--color-info-soft)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--color-info)'
-          }}
-        >
+        <div className="alert alert-info mb-4">
           <div className="flex items-start gap-2">
             <svg
               className="h-5 w-5 mt-0.5 flex-shrink-0"
-              style={{ color: 'var(--color-info)' }}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -130,10 +121,8 @@ export default function DispatchListEditor({
               />
             </svg>
             <div>
-              <p style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--color-info)', marginBottom: '4px' }}>
-                Interpretation Notes
-              </p>
-              <ul style={{ fontSize: 'var(--text-xs)', color: 'var(--color-info)' }} className="space-y-1">
+              <p className="text-label mb-1">INTERPRETATION NOTES</p>
+              <ul className="text-small space-y-1">
                 {notes.map((note, i) => (
                   <li key={i}>{note}</li>
                 ))}
@@ -145,19 +134,10 @@ export default function DispatchListEditor({
 
       {/* Warnings */}
       {warnings.length > 0 && (
-        <div
-          style={{
-            marginBottom: 'var(--space-4)',
-            padding: 'var(--space-3)',
-            background: 'var(--color-warning-soft)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--color-warning)'
-          }}
-        >
+        <div className="alert alert-warning mb-4">
           <div className="flex items-start gap-2">
             <svg
               className="h-5 w-5 mt-0.5 flex-shrink-0"
-              style={{ color: 'var(--color-warning)' }}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -170,10 +150,8 @@ export default function DispatchListEditor({
               />
             </svg>
             <div>
-              <p style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--color-warning)', marginBottom: '4px' }}>
-                Warnings
-              </p>
-              <ul style={{ fontSize: 'var(--text-xs)', color: 'var(--color-warning)' }} className="space-y-1">
+              <p className="text-label mb-1">WARNINGS</p>
+              <ul className="text-small space-y-1">
                 {warnings.map((warning, i) => (
                   <li key={i}>{warning}</li>
                 ))}
@@ -193,49 +171,34 @@ export default function DispatchListEditor({
             <div
               key={dispatch.id}
               style={{
-                padding: 'var(--space-4)',
-                borderRadius: 'var(--radius-lg)',
-                border: `1px solid ${hasErrors ? 'var(--color-danger)' : 'var(--color-border-subtle)'}`,
-                background: hasErrors ? 'var(--color-danger-soft)' : 'var(--color-bg)'
+                padding: '1rem',
+                borderRadius: '0',
+                border: `1px solid ${hasErrors ? 'var(--red)' : 'var(--grey-light)'}`,
+                background: hasErrors ? 'var(--error-bg)' : 'var(--grey-input)'
               }}
             >
-              <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-3)' }}>
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-text-main)' }}>
-                    Dispatch #{dispatch.id}
+                  <span className="text-mono" style={{ fontWeight: 700 }}>
+                    DISPATCH #{dispatch.id}
                   </span>
-                  {/* Requirement badges */}
                   <span className="badge badge-neutral">
-                    {dispatch.requirements.capacity}kg
+                    {dispatch.requirements.capacity}KG
                   </span>
                   {dispatch.requirements.cooling && (
-                    <span className="badge badge-info">
-                      Cooling
-                    </span>
+                    <span className="badge badge-info">COOLING</span>
                   )}
                   {dispatch.requirements.heating && (
-                    <span className="badge badge-warning">
-                      Heating
-                    </span>
+                    <span className="badge badge-warning">HEATING</span>
                   )}
                 </div>
                 <button
                   onClick={() => removeDispatch(index)}
-                  className="transition-colors hover:opacity-70"
-                  style={{ color: 'var(--color-text-muted)' }}
+                  className="transition-opacity hover:opacity-70"
+                  style={{ color: 'var(--grey-dark)' }}
                 >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
@@ -243,9 +206,7 @@ export default function DispatchListEditor({
               <div className="grid grid-cols-2 gap-3">
                 {/* ID */}
                 <div>
-                  <label className="text-label" style={{ display: 'block', marginBottom: '4px' }}>
-                    ID
-                  </label>
+                  <label className="text-label block mb-1">ID</label>
                   <input
                     type="number"
                     value={dispatch.id}
@@ -253,15 +214,13 @@ export default function DispatchListEditor({
                       updateDispatch(index, { id: parseInt(e.target.value) || 0 })
                     }
                     className="input"
-                    style={{ padding: 'var(--space-2) var(--space-3)' }}
+                    style={{ padding: '0.75rem' }}
                   />
                 </div>
 
                 {/* Date */}
                 <div>
-                  <label className="text-label" style={{ display: 'block', marginBottom: '4px' }}>
-                    Date
-                  </label>
+                  <label className="text-label block mb-1">DATE</label>
                   <input
                     type="date"
                     value={dispatch.date}
@@ -269,15 +228,13 @@ export default function DispatchListEditor({
                       updateDispatch(index, { date: e.target.value })
                     }
                     className="input"
-                    style={{ padding: 'var(--space-2) var(--space-3)' }}
+                    style={{ padding: '0.75rem' }}
                   />
                 </div>
 
                 {/* Time */}
                 <div>
-                  <label className="text-label" style={{ display: 'block', marginBottom: '4px' }}>
-                    Time
-                  </label>
+                  <label className="text-label block mb-1">TIME</label>
                   <input
                     type="time"
                     value={dispatch.time}
@@ -285,15 +242,13 @@ export default function DispatchListEditor({
                       updateDispatch(index, { time: e.target.value })
                     }
                     className="input"
-                    style={{ padding: 'var(--space-2) var(--space-3)' }}
+                    style={{ padding: '0.75rem' }}
                   />
                 </div>
 
                 {/* Capacity */}
                 <div>
-                  <label className="text-label" style={{ display: 'block', marginBottom: '4px' }}>
-                    Capacity (kg)
-                  </label>
+                  <label className="text-label block mb-1">CAPACITY (KG)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -305,18 +260,13 @@ export default function DispatchListEditor({
                       })
                     }
                     className="input"
-                    style={{ padding: 'var(--space-2) var(--space-3)' }}
+                    style={{ padding: '0.75rem' }}
                   />
                 </div>
 
-                {/* Cooling - Toggle */}
+                {/* Cooling */}
                 <div className="flex items-center justify-between">
-                  <label
-                    htmlFor={`cooling-${index}`}
-                    style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}
-                  >
-                    Cooling
-                  </label>
+                  <label className="text-small">COOLING</label>
                   <button
                     type="button"
                     onClick={() =>
@@ -328,14 +278,9 @@ export default function DispatchListEditor({
                   />
                 </div>
 
-                {/* Heating - Toggle */}
+                {/* Heating */}
                 <div className="flex items-center justify-between">
-                  <label
-                    htmlFor={`heating-${index}`}
-                    style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}
-                  >
-                    Heating
-                  </label>
+                  <label className="text-small">HEATING</label>
                   <button
                     type="button"
                     onClick={() =>
@@ -349,9 +294,7 @@ export default function DispatchListEditor({
 
                 {/* Longitude */}
                 <div>
-                  <label className="text-label" style={{ display: 'block', marginBottom: '4px' }}>
-                    Longitude
-                  </label>
+                  <label className="text-label block mb-1">LONGITUDE</label>
                   <input
                     type="number"
                     step="0.0001"
@@ -362,15 +305,13 @@ export default function DispatchListEditor({
                       })
                     }
                     className="input"
-                    style={{ padding: 'var(--space-2) var(--space-3)' }}
+                    style={{ padding: '0.75rem' }}
                   />
                 </div>
 
                 {/* Latitude */}
                 <div>
-                  <label className="text-label" style={{ display: 'block', marginBottom: '4px' }}>
-                    Latitude
-                  </label>
+                  <label className="text-label block mb-1">LATITUDE</label>
                   <input
                     type="number"
                     step="0.0001"
@@ -381,15 +322,13 @@ export default function DispatchListEditor({
                       })
                     }
                     className="input"
-                    style={{ padding: 'var(--space-2) var(--space-3)' }}
+                    style={{ padding: '0.75rem' }}
                   />
                 </div>
 
-                {/* Max Cost (optional) */}
+                {/* Max Cost */}
                 <div className="col-span-2">
-                  <label className="text-label" style={{ display: 'block', marginBottom: '4px' }}>
-                    Max Cost (optional)
-                  </label>
+                  <label className="text-label block mb-1">MAX COST (OPTIONAL)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -402,16 +341,16 @@ export default function DispatchListEditor({
                           : undefined
                       })
                     }
-                    placeholder="No limit"
+                    placeholder="NO LIMIT"
                     className="input"
-                    style={{ padding: 'var(--space-2) var(--space-3)' }}
+                    style={{ padding: '0.75rem' }}
                   />
                 </div>
               </div>
 
               {/* Validation errors */}
               {hasErrors && (
-                <div style={{ marginTop: 'var(--space-3)', fontSize: 'var(--text-xs)', color: 'var(--color-danger)' }}>
+                <div className="mt-3 text-small" style={{ color: 'var(--red)' }}>
                   {errors.map((err, i) => (
                     <p key={i}>{err.message}</p>
                   ))}
@@ -423,52 +362,37 @@ export default function DispatchListEditor({
       </div>
 
       {/* Action buttons */}
-      <div className="flex gap-3" style={{ marginTop: 'var(--space-4)' }}>
+      <div className="flex gap-3 mt-4">
         <button
           onClick={onValidate}
           disabled={isLoading || dispatches.length === 0}
           className="btn btn-secondary flex-1"
-          style={{ borderRadius: 'var(--radius-lg)', fontSize: 'var(--text-sm)' }}
         >
-          Check Available Drones
+          CHECK DRONES
         </button>
         <button
           onClick={onPlanRoutes}
           disabled={isLoading || dispatches.length === 0}
           className="btn btn-primary flex-1"
-          style={{ borderRadius: 'var(--radius-lg)', fontSize: 'var(--text-sm)' }}
         >
-          Plan Routes
+          PLAN ROUTES
         </button>
       </div>
 
       {/* Available drones */}
       {availableDrones !== null && (
-        <div
-          style={{
-            marginTop: 'var(--space-4)',
-            padding: 'var(--space-3)',
-            background: 'var(--color-success-soft)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--color-success)'
-          }}
-        >
-          <p style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--color-success)', marginBottom: '4px' }}>
-            Available Drones
-          </p>
+        <div className="alert alert-success mt-4">
+          <p className="text-label mb-1">AVAILABLE DRONES</p>
           {availableDrones.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {availableDrones.map((droneId) => (
-                <span
-                  key={droneId}
-                  className="badge badge-success"
-                >
-                  Drone {droneId}
+                <span key={droneId} className="badge badge-success">
+                  DRONE {droneId}
                 </span>
               ))}
             </div>
           ) : (
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-success)' }}>
+            <p className="text-small">
               No drones available for these requirements
             </p>
           )}

@@ -11,19 +11,19 @@ interface NaturalLanguageInputProps {
 
 const examplePrompts = [
   {
-    title: 'Cooling Required',
+    title: 'COOLING REQUIRED',
     text: 'Deliver 2kg of insulin that needs cooling to the Royal Infirmary tomorrow at 2pm'
   },
   {
-    title: 'Heating Required',
+    title: 'HEATING REQUIRED',
     text: 'Send 500g of warm blood samples to Western General Hospital today around 4pm, keep them heated'
   },
   {
-    title: 'Multiple Deliveries',
+    title: 'MULTIPLE DELIVERIES',
     text: 'Tomorrow morning: 1kg of vaccines (refrigerated) to Sick Kids, and in the afternoon send 750g of medication to Marchmont. Try to keep cost under £50.'
   },
   {
-    title: 'Basic Delivery',
+    title: 'BASIC DELIVERY',
     text: 'Deliver 300g of prescription medication to George Square at 3:30pm today'
   }
 ];
@@ -49,53 +49,37 @@ export default function NaturalLanguageInput({
   };
 
   return (
-    <div className="card" style={{ padding: 'var(--space-6)' }}>
-      <h2 className="text-title" style={{ marginBottom: 'var(--space-4)' }}>
-        Create Dispatches
+    <div className="card" style={{ padding: '1.5rem' }}>
+      <h2 className="text-section mb-4">
+        CREATE DISPATCHES
       </h2>
 
       {/* Tab switcher */}
-      <div className="flex gap-2" style={{ marginBottom: 'var(--space-4)' }}>
+      <div className="flex gap-2 mb-4">
         <button
           onClick={() => setActiveTab('freetext')}
-          className="flex-1 transition-colors duration-200"
-          style={{
-            padding: 'var(--space-2) var(--space-4)',
-            fontSize: 'var(--text-sm)',
-            fontWeight: 500,
-            borderRadius: 'var(--radius-md)',
-            background: activeTab === 'freetext' ? 'var(--color-primary-soft)' : 'var(--color-bg)',
-            color: activeTab === 'freetext' ? 'var(--color-primary)' : 'var(--color-text-secondary)'
-          }}
+          className={`btn-toggle flex-1 ${activeTab === 'freetext' ? 'active' : ''}`}
+          style={{ padding: '0.75rem 1rem' }}
         >
-          Free Text
+          FREE TEXT
         </button>
         <button
           onClick={() => setActiveTab('prescription')}
-          className="flex-1 transition-colors duration-200"
-          style={{
-            padding: 'var(--space-2) var(--space-4)',
-            fontSize: 'var(--text-sm)',
-            fontWeight: 500,
-            borderRadius: 'var(--radius-md)',
-            background: activeTab === 'prescription' ? 'var(--color-primary-soft)' : 'var(--color-bg)',
-            color: activeTab === 'prescription' ? 'var(--color-primary)' : 'var(--color-text-secondary)'
-          }}
+          className={`btn-toggle flex-1 ${activeTab === 'prescription' ? 'active' : ''}`}
+          style={{ padding: '0.75rem 1rem' }}
         >
-          Prescription Upload
+          PRESCRIPTION
         </button>
       </div>
 
       {activeTab === 'freetext' ? (
         <>
-          <div style={{ marginBottom: 'var(--space-4)' }}>
+          <div className="mb-4">
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Describe your delivery needs in plain English...
-
-Example: 'Deliver 2kg of insulin that needs cooling to the Royal Infirmary tomorrow at 2pm'"
-              className="input resize-none"
+              placeholder="Describe your delivery needs in plain English..."
+              className="textarea"
               style={{ height: '160px' }}
               disabled={isLoading}
             />
@@ -105,7 +89,6 @@ Example: 'Deliver 2kg of insulin that needs cooling to the Royal Infirmary tomor
             onClick={handleGenerate}
             disabled={isLoading || !inputText.trim()}
             className="btn btn-primary w-full"
-            style={{ borderRadius: 'var(--radius-lg)' }}
           >
             {isLoading ? (
               <>
@@ -125,16 +108,16 @@ Example: 'Deliver 2kg of insulin that needs cooling to the Royal Infirmary tomor
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
-                Generating...
+                GENERATING...
               </>
             ) : (
-              'Generate Dispatches'
+              'GENERATE DISPATCHES'
             )}
           </button>
 
-          <div style={{ marginTop: 'var(--space-6)' }}>
-            <h3 className="text-label" style={{ marginBottom: 'var(--space-3)' }}>
-              Try an example
+          <div className="mt-6">
+            <h3 className="text-label mb-3">
+              TRY AN EXAMPLE
             </h3>
             <div className="space-y-2">
               {examplePrompts.map((example, index) => (
@@ -142,17 +125,17 @@ Example: 'Deliver 2kg of insulin that needs cooling to the Royal Infirmary tomor
                   key={index}
                   onClick={() => handleExampleClick(example.text)}
                   disabled={isLoading}
-                  className="w-full text-left transition-colors duration-200 disabled:opacity-50"
+                  className="w-full text-left transition-all duration-200 disabled:opacity-50"
                   style={{
-                    padding: 'var(--space-3)',
-                    background: 'var(--color-bg)',
-                    borderRadius: 'var(--radius-md)'
+                    padding: '0.75rem 1rem',
+                    background: 'var(--grey-input)',
+                    borderRadius: '0'
                   }}
                 >
-                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--color-primary)' }}>
+                  <span className="text-micro" style={{ color: 'var(--blue)' }}>
                     {example.title}
                   </span>
-                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: '4px' }} className="line-clamp-2">
+                  <p className="text-small mt-1" style={{ lineHeight: '1.4' }}>
                     {example.text}
                   </p>
                 </button>

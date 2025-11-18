@@ -6,7 +6,6 @@ interface PlanSummaryProps {
   plan: IlpPlanResponse | null;
 }
 
-// Hardcoded drone info (based on typical ILP configuration)
 const droneInfo: Record<
   string,
   { name: string; capacity: number; cooling: boolean; heating: boolean }
@@ -25,14 +24,12 @@ const droneInfo: Record<
 export default function PlanSummary({ plan }: PlanSummaryProps) {
   if (!plan) {
     return (
-      <div className="card" style={{ padding: 'var(--space-6)' }}>
-        <h2 className="text-title" style={{ marginBottom: 'var(--space-4)' }}>
-          Plan Summary
-        </h2>
-        <div className="text-center" style={{ padding: 'var(--space-8) 0', color: 'var(--color-text-muted)' }}>
+      <div className="card" style={{ padding: '1.5rem' }}>
+        <h2 className="text-section mb-4">PLAN SUMMARY</h2>
+        <div className="text-center" style={{ padding: '2rem 0' }}>
           <svg
             className="mx-auto mb-4"
-            style={{ height: '48px', width: '48px', color: 'var(--color-border)' }}
+            style={{ height: '48px', width: '48px', color: 'var(--grey-dark)' }}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -44,7 +41,7 @@ export default function PlanSummary({ plan }: PlanSummaryProps) {
               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
             />
           </svg>
-          <p style={{ fontSize: 'var(--text-sm)' }}>
+          <p className="text-body">
             No plan yet. Click &quot;Plan Routes&quot; to generate.
           </p>
         </div>
@@ -58,32 +55,34 @@ export default function PlanSummary({ plan }: PlanSummaryProps) {
   );
 
   return (
-    <div className="card" style={{ padding: 'var(--space-6)' }}>
-      <h2 className="text-title" style={{ marginBottom: 'var(--space-4)' }}>Plan Summary</h2>
+    <div className="card" style={{ padding: '1.5rem' }}>
+      <h2 className="text-section mb-4">PLAN SUMMARY</h2>
 
       {/* Key metrics */}
-      <div className="grid grid-cols-3 gap-4" style={{ marginBottom: 'var(--space-6)' }}>
-        <div style={{ background: 'var(--color-primary-soft)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', textAlign: 'center' }}>
-          <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-primary)' }}>
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div style={{ background: 'var(--grey-input)', padding: '1rem', textAlign: 'center' }}>
+          <p className="text-mono" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--blue)' }}>
             {plan.totalCost.toFixed(2)}
           </p>
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', marginTop: '4px' }}>Total Cost</p>
+          <p className="text-micro mt-1">TOTAL COST</p>
         </div>
-        <div style={{ background: 'var(--color-success-soft)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', textAlign: 'center' }}>
-          <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-success)' }}>{plan.totalMoves}</p>
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-success)', marginTop: '4px' }}>Total Moves</p>
+        <div style={{ background: 'var(--grey-input)', padding: '1rem', textAlign: 'center' }}>
+          <p className="text-mono" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--green)' }}>
+            {plan.totalMoves}
+          </p>
+          <p className="text-micro mt-1">TOTAL MOVES</p>
         </div>
-        <div style={{ background: 'var(--color-info-soft)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', textAlign: 'center' }}>
-          <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-info)' }}>{totalDeliveries}</p>
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-info)', marginTop: '4px' }}>Deliveries</p>
+        <div style={{ background: 'var(--grey-input)', padding: '1rem', textAlign: 'center' }}>
+          <p className="text-mono" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--charcoal)' }}>
+            {totalDeliveries}
+          </p>
+          <p className="text-micro mt-1">DELIVERIES</p>
         </div>
       </div>
 
       {/* Drone breakdown */}
       <div>
-        <h3 className="text-label" style={{ marginBottom: 'var(--space-3)' }}>
-          Drone Assignments
-        </h3>
+        <h3 className="text-label mb-3">DRONE ASSIGNMENTS</h3>
         <div className="space-y-3">
           {plan.dronePaths.map((dronePath) => {
             const info = droneInfo[dronePath.droneId] || {
@@ -96,35 +95,24 @@ export default function PlanSummary({ plan }: PlanSummaryProps) {
             return (
               <div
                 key={dronePath.droneId}
-                style={{ background: 'var(--color-bg)', borderRadius: 'var(--radius-md)', padding: 'var(--space-3)' }}
+                style={{ background: 'var(--grey-input)', padding: '0.75rem' }}
               >
-                <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-2)' }}>
-                  <span style={{ fontWeight: 500, color: 'var(--color-text-main)' }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-body" style={{ fontWeight: 500 }}>
                     {info.name}{' '}
-                    <span style={{ color: 'var(--color-text-muted)' }}>#{dronePath.droneId}</span>
+                    <span className="text-mono" style={{ color: 'var(--grey-dark)' }}>#{dronePath.droneId}</span>
                   </span>
-                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-                    {dronePath.deliveries.length} deliveries
+                  <span className="text-mono" style={{ color: 'var(--grey-dark)' }}>
+                    {dronePath.deliveries.length} DELIVERIES
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-1" style={{ marginBottom: 'var(--space-2)' }}>
-                  <span className="badge badge-neutral">
-                    {info.capacity}kg
-                  </span>
-                  {info.cooling && (
-                    <span className="badge badge-info">
-                      Cooling
-                    </span>
-                  )}
-                  {info.heating && (
-                    <span className="badge badge-warning">
-                      Heating
-                    </span>
-                  )}
+                <div className="flex flex-wrap gap-1 mb-2">
+                  <span className="badge badge-neutral">{info.capacity}KG</span>
+                  {info.cooling && <span className="badge badge-info">COOLING</span>}
+                  {info.heating && <span className="badge badge-warning">HEATING</span>}
                 </div>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                  Deliveries:{' '}
-                  {dronePath.deliveries.map((d) => `#${d.deliveryId}`).join(', ')}
+                <div className="text-mono text-small" style={{ color: 'var(--grey-dark)' }}>
+                  DELIVERIES: {dronePath.deliveries.map((d) => `#${d.deliveryId}`).join(', ')}
                 </div>
               </div>
             );

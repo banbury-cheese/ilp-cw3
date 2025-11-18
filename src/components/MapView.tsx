@@ -88,10 +88,8 @@ export default function MapView({
   const [MapComponent, setMapComponent] = useState<React.ComponentType<unknown> | null>(null);
 
   useEffect(() => {
-    // Dynamically import Leaflet components to avoid SSR issues
     import('react-leaflet').then((L) => {
       import('leaflet').then((leaflet) => {
-        // Fix default marker icons
         delete (leaflet.default.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
         leaflet.default.Icon.Default.mergeOptions({
           iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -106,26 +104,23 @@ export default function MapView({
             center={[55.945, -3.19]}
             zoom={13}
             style={{ height: '100%', width: '100%' }}
-            className="rounded-xl"
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
-            {/* Service points */}
             {showServicePoints &&
               servicePoints.map((point) => (
                 <Marker key={point.name} position={[point.lat, point.lng]}>
                   <Popup>
                     <strong>{point.name}</strong>
                     <br />
-                    <span className="text-gray-500">{point.type}</span>
+                    <span style={{ color: 'var(--grey-dark)' }}>{point.type}</span>
                   </Popup>
                 </Marker>
               ))}
 
-            {/* Delivery points */}
             {deliveryPoints.map((point) => (
               <Marker key={point.id} position={[point.lat, point.lng]}>
                 <Popup>
@@ -134,15 +129,14 @@ export default function MapView({
               </Marker>
             ))}
 
-            {/* Restricted areas */}
             {showRestrictedAreas &&
               restrictedAreas.map((area) => (
                 <Polygon
                   key={area.name}
                   positions={area.coordinates.map(([lng, lat]) => [lat, lng])}
                   pathOptions={{
-                    color: '#ef4444',
-                    fillColor: '#ef4444',
+                    color: '#cf1515',
+                    fillColor: '#cf1515',
                     fillOpacity: 0.2
                   }}
                 >
@@ -150,12 +144,11 @@ export default function MapView({
                 </Polygon>
               ))}
 
-            {/* Route polyline */}
             {geojson && geojson.coordinates.length > 0 && (
               <Polyline
                 positions={geojson.coordinates.map(([lng, lat]) => [lat, lng])}
                 pathOptions={{
-                  color: '#6366f1',
+                  color: '#0064e2',
                   weight: 3,
                   opacity: 0.8
                 }}
@@ -170,26 +163,26 @@ export default function MapView({
   }, [geojson, deliveryPoints, showServicePoints, showRestrictedAreas]);
 
   return (
-    <div className="card" style={{ padding: 'var(--space-4)' }}>
-      <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-3)' }}>
-        <h2 className="text-title">Route Map</h2>
-        <div className="flex items-center gap-4" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+    <div className="card" style={{ padding: '1rem' }}>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-section">ROUTE MAP</h2>
+        <div className="flex items-center gap-4 text-micro" style={{ color: 'var(--grey-dark)' }}>
           {showServicePoints && (
             <span className="flex items-center gap-1">
-              <span style={{ width: '8px', height: '8px', background: 'var(--color-info)', borderRadius: '50%' }}></span>
-              Service Points
+              <span style={{ width: '8px', height: '8px', background: 'var(--blue)', borderRadius: '0' }}></span>
+              SERVICE
             </span>
           )}
           {showRestrictedAreas && (
             <span className="flex items-center gap-1">
-              <span style={{ width: '8px', height: '8px', background: 'var(--color-danger)', borderRadius: '50%' }}></span>
-              Restricted
+              <span style={{ width: '8px', height: '8px', background: 'var(--red)', borderRadius: '0' }}></span>
+              RESTRICTED
             </span>
           )}
           {geojson && (
             <span className="flex items-center gap-1">
-              <span style={{ width: '8px', height: '8px', background: 'var(--color-primary)', borderRadius: '50%' }}></span>
-              Route
+              <span style={{ width: '8px', height: '8px', background: 'var(--blue)', borderRadius: '0' }}></span>
+              ROUTE
             </span>
           )}
         </div>
@@ -198,15 +191,15 @@ export default function MapView({
       <div
         style={{
           height: '400px',
-          borderRadius: 'var(--radius-lg)',
+          borderRadius: '0',
           overflow: 'hidden',
-          background: 'var(--color-bg)'
+          background: 'var(--grey-input)'
         }}
       >
         {MapComponent ? (
           <MapComponent />
         ) : (
-          <div className="h-full flex items-center justify-center" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="h-full flex items-center justify-center" style={{ color: 'var(--grey-dark)' }}>
             <svg
               className="animate-spin h-8 w-8"
               fill="none"
