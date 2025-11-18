@@ -170,36 +170,43 @@ export default function MapView({
   }, [geojson, deliveryPoints, showServicePoints, showRestrictedAreas]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-gray-900">Route Map</h2>
-        <div className="flex items-center gap-4 text-xs text-gray-500">
+    <div className="card" style={{ padding: 'var(--space-4)' }}>
+      <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-3)' }}>
+        <h2 className="text-title">Route Map</h2>
+        <div className="flex items-center gap-4" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
           {showServicePoints && (
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+              <span style={{ width: '8px', height: '8px', background: 'var(--color-info)', borderRadius: '50%' }}></span>
               Service Points
             </span>
           )}
           {showRestrictedAreas && (
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+              <span style={{ width: '8px', height: '8px', background: 'var(--color-danger)', borderRadius: '50%' }}></span>
               Restricted
             </span>
           )}
           {geojson && (
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+              <span style={{ width: '8px', height: '8px', background: 'var(--color-primary)', borderRadius: '50%' }}></span>
               Route
             </span>
           )}
         </div>
       </div>
 
-      <div className="h-[400px] rounded-xl overflow-hidden bg-gray-100">
+      <div
+        style={{
+          height: '400px',
+          borderRadius: 'var(--radius-lg)',
+          overflow: 'hidden',
+          background: 'var(--color-bg)'
+        }}
+      >
         {MapComponent ? (
           <MapComponent />
         ) : (
-          <div className="h-full flex items-center justify-center text-gray-400">
+          <div className="h-full flex items-center justify-center" style={{ color: 'var(--color-text-muted)' }}>
             <svg
               className="animate-spin h-8 w-8"
               fill="none"

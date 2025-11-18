@@ -25,13 +25,14 @@ const droneInfo: Record<
 export default function PlanSummary({ plan }: PlanSummaryProps) {
   if (!plan) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="card" style={{ padding: 'var(--space-6)' }}>
+        <h2 className="text-title" style={{ marginBottom: 'var(--space-4)' }}>
           Plan Summary
         </h2>
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center" style={{ padding: 'var(--space-8) 0', color: 'var(--color-text-muted)' }}>
           <svg
-            className="mx-auto h-12 w-12 text-gray-300 mb-4"
+            className="mx-auto mb-4"
+            style={{ height: '48px', width: '48px', color: 'var(--color-border)' }}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -43,7 +44,7 @@ export default function PlanSummary({ plan }: PlanSummaryProps) {
               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
             />
           </svg>
-          <p className="text-sm">
+          <p style={{ fontSize: 'var(--text-sm)' }}>
             No plan yet. Click &quot;Plan Routes&quot; to generate.
           </p>
         </div>
@@ -57,30 +58,30 @@ export default function PlanSummary({ plan }: PlanSummaryProps) {
   );
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Plan Summary</h2>
+    <div className="card" style={{ padding: 'var(--space-6)' }}>
+      <h2 className="text-title" style={{ marginBottom: 'var(--space-4)' }}>Plan Summary</h2>
 
       {/* Key metrics */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-indigo-50 rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-indigo-600">
+      <div className="grid grid-cols-3 gap-4" style={{ marginBottom: 'var(--space-6)' }}>
+        <div style={{ background: 'var(--color-primary-soft)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', textAlign: 'center' }}>
+          <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-primary)' }}>
             {plan.totalCost.toFixed(2)}
           </p>
-          <p className="text-xs text-indigo-500 mt-1">Total Cost</p>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', marginTop: '4px' }}>Total Cost</p>
         </div>
-        <div className="bg-green-50 rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-green-600">{plan.totalMoves}</p>
-          <p className="text-xs text-green-500 mt-1">Total Moves</p>
+        <div style={{ background: 'var(--color-success-soft)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', textAlign: 'center' }}>
+          <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-success)' }}>{plan.totalMoves}</p>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-success)', marginTop: '4px' }}>Total Moves</p>
         </div>
-        <div className="bg-purple-50 rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-purple-600">{totalDeliveries}</p>
-          <p className="text-xs text-purple-500 mt-1">Deliveries</p>
+        <div style={{ background: 'var(--color-info-soft)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', textAlign: 'center' }}>
+          <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-info)' }}>{totalDeliveries}</p>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-info)', marginTop: '4px' }}>Deliveries</p>
         </div>
       </div>
 
       {/* Drone breakdown */}
       <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-3">
+        <h3 className="text-label" style={{ marginBottom: 'var(--space-3)' }}>
           Drone Assignments
         </h3>
         <div className="space-y-3">
@@ -95,33 +96,33 @@ export default function PlanSummary({ plan }: PlanSummaryProps) {
             return (
               <div
                 key={dronePath.droneId}
-                className="bg-gray-50 rounded-lg p-3"
+                style={{ background: 'var(--color-bg)', borderRadius: 'var(--radius-md)', padding: 'var(--space-3)' }}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-gray-900">
+                <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-2)' }}>
+                  <span style={{ fontWeight: 500, color: 'var(--color-text-main)' }}>
                     {info.name}{' '}
-                    <span className="text-gray-400">#{dronePath.droneId}</span>
+                    <span style={{ color: 'var(--color-text-muted)' }}>#{dronePath.droneId}</span>
                   </span>
-                  <span className="text-sm text-gray-500">
+                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
                     {dronePath.deliveries.length} deliveries
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-1 mb-2">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-200 text-gray-700">
+                <div className="flex flex-wrap gap-1" style={{ marginBottom: 'var(--space-2)' }}>
+                  <span className="badge badge-neutral">
                     {info.capacity}kg
                   </span>
                   {info.cooling && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-700">
+                    <span className="badge badge-info">
                       Cooling
                     </span>
                   )}
                   {info.heating && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-orange-100 text-orange-700">
+                    <span className="badge badge-warning">
                       Heating
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
                   Deliveries:{' '}
                   {dronePath.deliveries.map((d) => `#${d.deliveryId}`).join(', ')}
                 </div>

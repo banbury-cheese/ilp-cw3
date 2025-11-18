@@ -49,30 +49,38 @@ export default function NaturalLanguageInput({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+    <div className="card" style={{ padding: 'var(--space-6)' }}>
+      <h2 className="text-title" style={{ marginBottom: 'var(--space-4)' }}>
         Create Dispatches
       </h2>
 
       {/* Tab switcher */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2" style={{ marginBottom: 'var(--space-4)' }}>
         <button
           onClick={() => setActiveTab('freetext')}
-          className={`flex-1 py-2 px-4 text-sm font-medium rounded-lg transition-colors duration-200 ${
-            activeTab === 'freetext'
-              ? 'bg-indigo-100 text-indigo-700'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
+          className="flex-1 transition-colors duration-200"
+          style={{
+            padding: 'var(--space-2) var(--space-4)',
+            fontSize: 'var(--text-sm)',
+            fontWeight: 500,
+            borderRadius: 'var(--radius-md)',
+            background: activeTab === 'freetext' ? 'var(--color-primary-soft)' : 'var(--color-bg)',
+            color: activeTab === 'freetext' ? 'var(--color-primary)' : 'var(--color-text-secondary)'
+          }}
         >
           Free Text
         </button>
         <button
           onClick={() => setActiveTab('prescription')}
-          className={`flex-1 py-2 px-4 text-sm font-medium rounded-lg transition-colors duration-200 ${
-            activeTab === 'prescription'
-              ? 'bg-indigo-100 text-indigo-700'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
+          className="flex-1 transition-colors duration-200"
+          style={{
+            padding: 'var(--space-2) var(--space-4)',
+            fontSize: 'var(--text-sm)',
+            fontWeight: 500,
+            borderRadius: 'var(--radius-md)',
+            background: activeTab === 'prescription' ? 'var(--color-primary-soft)' : 'var(--color-bg)',
+            color: activeTab === 'prescription' ? 'var(--color-primary)' : 'var(--color-text-secondary)'
+          }}
         >
           Prescription Upload
         </button>
@@ -80,14 +88,15 @@ export default function NaturalLanguageInput({
 
       {activeTab === 'freetext' ? (
         <>
-          <div className="mb-4">
+          <div style={{ marginBottom: 'var(--space-4)' }}>
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Describe your delivery needs in plain English...
 
 Example: 'Deliver 2kg of insulin that needs cooling to the Royal Infirmary tomorrow at 2pm'"
-              className="w-full h-40 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-gray-800 placeholder-gray-400"
+              className="input resize-none"
+              style={{ height: '160px' }}
               disabled={isLoading}
             />
           </div>
@@ -95,7 +104,8 @@ Example: 'Deliver 2kg of insulin that needs cooling to the Royal Infirmary tomor
           <button
             onClick={handleGenerate}
             disabled={isLoading || !inputText.trim()}
-            className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-colors duration-200 flex items-center justify-center gap-2"
+            className="btn btn-primary w-full"
+            style={{ borderRadius: 'var(--radius-lg)' }}
           >
             {isLoading ? (
               <>
@@ -122,8 +132,8 @@ Example: 'Deliver 2kg of insulin that needs cooling to the Royal Infirmary tomor
             )}
           </button>
 
-          <div className="mt-6">
-            <h3 className="text-sm font-medium text-gray-600 mb-3">
+          <div style={{ marginTop: 'var(--space-6)' }}>
+            <h3 className="text-label" style={{ marginBottom: 'var(--space-3)' }}>
               Try an example
             </h3>
             <div className="space-y-2">
@@ -132,12 +142,17 @@ Example: 'Deliver 2kg of insulin that needs cooling to the Royal Infirmary tomor
                   key={index}
                   onClick={() => handleExampleClick(example.text)}
                   disabled={isLoading}
-                  className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                  className="w-full text-left transition-colors duration-200 disabled:opacity-50"
+                  style={{
+                    padding: 'var(--space-3)',
+                    background: 'var(--color-bg)',
+                    borderRadius: 'var(--radius-md)'
+                  }}
                 >
-                  <span className="text-sm font-medium text-indigo-600">
+                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--color-primary)' }}>
                     {example.title}
                   </span>
-                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: '4px' }} className="line-clamp-2">
                     {example.text}
                   </p>
                 </button>
