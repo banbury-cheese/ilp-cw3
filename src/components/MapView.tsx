@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { GeoJsonLineString, ServicePoint, RestrictedArea } from '@/types';
+import { calculateHeading, calculateCumulativeCost } from '@/lib/scenarios';
 
 // Service points in Edinburgh
 const servicePoints: ServicePoint[] = [
@@ -85,7 +86,83 @@ export default function MapView({
   showServicePoints = true,
   showRestrictedAreas = true
 }: MapViewProps) {
-  const [MapComponent, setMapComponent] = useState<React.ComponentType<unknown> | null>(null);
+  const [MapComponent, setMapComponent] = useState<React.ComponentType<{ dronePosition?: [number, number] }> | null>(null);
+
+  // Animation state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [speed, setSpeed] = useState(1);
+  const animationRef = useRef<number | null>(null);
+
+  const totalSteps = geojson?.coordinates.length || 0;
+  const hasRoute = totalSteps > 0;
+
+  // Current position for drone marker
+  const dronePosition: [number, number] | undefined = hasRoute && currentStep < totalSteps
+    ? [geojson!.coordinates[currentStep][1], geojson!.coordinates[currentStep][0]]
+    : undefined;
+
+  // Calculate heading
+  const heading = hasRoute && currentStep < totalSteps - 1
+    ? calculateHeading(
+        geojson!.coordinates[currentStep],
+        geojson!.coordinates[currentStep + 1]
+      )
+    : 'N';
+
+  // Calculate cumulative cost
+  const cumulativeCost = calculateCumulativeCost(currentStep);
+
+  // Animation loop
+  const animate = useCallback(() => {
+    setCurrentStep(prev => {
+      if (prev >= totalSteps - 1) {
+        setIsPlaying(false);
+        return prev;
+      }
+      return prev + 1;
+    });
+  }, [totalSteps]);
+
+  useEffect(() => {
+    if (isPlaying && hasRoute) {
+      const interval = 200 / speed; // Base interval adjusted by speed
+      animationRef.current = window.setInterval(animate, interval);
+    } else {
+      if (animationRef.current) {
+        clearInterval(animationRef.current);
+        animationRef.current = null;
+      }
+    }
+
+    return () => {
+      if (animationRef.current) {
+        clearInterval(animationRef.current);
+      }
+    };
+  }, [isPlaying, speed, animate, hasRoute]);
+
+  // Reset animation when route changes
+  useEffect(() => {
+    setCurrentStep(0);
+    setIsPlaying(false);
+  }, [geojson]);
+
+  const handlePlayPause = () => {
+    if (currentStep >= totalSteps - 1) {
+      setCurrentStep(0);
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleReset = () => {
+    setIsPlaying(false);
+    setCurrentStep(0);
+  };
+
+  const handleSpeedChange = (newSpeed: number) => {
+    setSpeed(newSpeed);
+  };
 
   useEffect(() => {
     import('react-leaflet').then((L) => {
@@ -97,9 +174,24 @@ export default function MapView({
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
         });
 
+        // Create drone icon
+        const droneIcon = leaflet.default.divIcon({
+          className: 'drone-marker',
+          html: `<div style="
+            width: 24px;
+            height: 24px;
+            background: var(--blue);
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          "></div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+
         const { MapContainer, TileLayer, Polyline, Marker, Popup, Polygon } = L;
 
-        const Map = () => (
+        const Map = ({ dronePosition }: { dronePosition?: [number, number] }) => (
           <MapContainer
             center={[55.945, -3.19]}
             zoom={13}
@@ -154,6 +246,12 @@ export default function MapView({
                 }}
               />
             )}
+
+            {dronePosition && (
+              <Marker position={dronePosition} icon={droneIcon}>
+                <Popup>Drone Position</Popup>
+              </Marker>
+            )}
           </MapContainer>
         );
 
@@ -197,7 +295,7 @@ export default function MapView({
         }}
       >
         {MapComponent ? (
-          <MapComponent />
+          <MapComponent dronePosition={dronePosition} />
         ) : (
           <div className="h-full flex items-center justify-center" style={{ color: 'var(--grey-dark)' }}>
             <svg
@@ -222,6 +320,75 @@ export default function MapView({
           </div>
         )}
       </div>
+
+      {/* Animation Controls */}
+      {hasRoute && (
+        <div className="mt-3">
+          {/* Info bar */}
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <div style={{ background: 'var(--grey-input)', padding: '0.5rem', textAlign: 'center' }}>
+              <p className="text-mono" style={{ fontWeight: 700, color: 'var(--charcoal)' }}>
+                {currentStep} / {totalSteps - 1}
+              </p>
+              <p className="text-micro">STEP</p>
+            </div>
+            <div style={{ background: 'var(--grey-input)', padding: '0.5rem', textAlign: 'center' }}>
+              <p className="text-mono" style={{ fontWeight: 700, color: 'var(--blue)' }}>
+                {cumulativeCost.toFixed(4)}
+              </p>
+              <p className="text-micro">COST</p>
+            </div>
+            <div style={{ background: 'var(--grey-input)', padding: '0.5rem', textAlign: 'center' }}>
+              <p className="text-mono" style={{ fontWeight: 700, color: 'var(--green)' }}>
+                {heading}
+              </p>
+              <p className="text-micro">HEADING</p>
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePlayPause}
+              className="btn btn-primary"
+              style={{ padding: '0.5rem 1rem' }}
+            >
+              {isPlaying ? (
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                </svg>
+              ) : (
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              )}
+            </button>
+            <button
+              onClick={handleReset}
+              className="btn btn-secondary"
+              style={{ padding: '0.5rem 0.75rem' }}
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+
+            {/* Speed selector */}
+            <div className="flex gap-1 ml-auto">
+              {[1, 2, 4].map(s => (
+                <button
+                  key={s}
+                  onClick={() => handleSpeedChange(s)}
+                  className={`btn-toggle ${speed === s ? 'active' : ''}`}
+                  style={{ padding: '0.5rem 0.75rem', fontSize: '0.7rem' }}
+                >
+                  {s}X
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

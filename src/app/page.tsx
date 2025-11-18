@@ -5,13 +5,17 @@ import NaturalLanguageInput from '@/components/NaturalLanguageInput';
 import DispatchListEditor from '@/components/DispatchListEditor';
 import MapView from '@/components/MapView';
 import PlanSummary from '@/components/PlanSummary';
+import SavedScenarios from '@/components/SavedScenarios';
+import PrescriptionInsights, { PrescriptionAnalysis } from '@/components/PrescriptionInsights';
 import {
   MedDispatchRec,
   DispatchParseResult,
   GeoJsonLineString,
-  IlpPlanResponse
+  IlpPlanResponse,
+  Scenario
 } from '@/types';
 import { validateDispatches, formatValidationErrors } from '@/lib/validation';
+import { saveScenario, generateScenarioId } from '@/lib/scenarios';
 
 export default function Home() {
   const [dispatches, setDispatches] = useState<MedDispatchRec[]>([]);
@@ -23,12 +27,24 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleGenerate = async (inputText: string) => {
+  // Saved scenarios state
+  const [showScenariosModal, setShowScenariosModal] = useState(false);
+  const [inputText, setInputText] = useState('');
+  const [inputType, setInputType] = useState<'freetext' | 'prescription'>('freetext');
+
+  // Prescription insights state
+  const [prescriptionAnalysis, setPrescriptionAnalysis] = useState<PrescriptionAnalysis | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const handleGenerate = async (text: string) => {
     setIsLoading(true);
     setError(null);
     setAvailableDrones(null);
     setPlan(null);
     setGeojson(null);
+    setInputText(text);
+    setInputType('freetext');
+    setPrescriptionAnalysis(null);
 
     try {
       const today = new Date().toISOString().split('T')[0];
@@ -39,7 +55,7 @@ export default function Home() {
       const response = await fetch('/api/nlp/parse-dispatches', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inputText, defaultDate: today, defaultTime, idBase })
+        body: JSON.stringify({ inputText: text, defaultDate: today, defaultTime, idBase })
       });
 
       if (!response.ok) {
@@ -60,10 +76,14 @@ export default function Home() {
 
   const handlePrescriptionConvert = async (prescriptionText: string) => {
     setIsLoading(true);
+    setIsAnalyzing(true);
     setError(null);
     setAvailableDrones(null);
     setPlan(null);
     setGeojson(null);
+    setInputText(prescriptionText);
+    setInputType('prescription');
+    setPrescriptionAnalysis(null);
 
     try {
       const today = new Date().toISOString().split('T')[0];
@@ -71,25 +91,40 @@ export default function Home() {
       const defaultTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const idBase = Date.now() % 10000;
 
-      const response = await fetch('/api/prescriptions/convert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: prescriptionText, defaultDate: today, defaultTime, idBase })
-      });
+      // Run both the conversion and analysis in parallel
+      const [convertResponse, analysisResponse] = await Promise.all([
+        fetch('/api/prescriptions/convert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: prescriptionText, defaultDate: today, defaultTime, idBase })
+        }),
+        fetch('/api/prescriptions/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: prescriptionText })
+        })
+      ]);
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!convertResponse.ok) {
+        const errorData = await convertResponse.json();
         throw new Error(errorData.details || 'Failed to convert prescription');
       }
 
-      const result: DispatchParseResult = await response.json();
+      const result: DispatchParseResult = await convertResponse.json();
       setDispatches(result.dispatches);
       setNotes(result.notes);
       setWarnings(result.warnings);
+
+      // Handle analysis response (don't fail if analysis fails)
+      if (analysisResponse.ok) {
+        const analysis = await analysisResponse.json();
+        setPrescriptionAnalysis(analysis);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsLoading(false);
+      setIsAnalyzing(false);
     }
   };
 
@@ -158,6 +193,39 @@ export default function Home() {
     }
   };
 
+  const handleSaveScenario = () => {
+    if (!plan || !geojson) return;
+
+    const scenarioName = prompt('Enter a name for this scenario:', `Scenario ${new Date().toLocaleDateString()}`);
+    if (!scenarioName) return;
+
+    const scenario: Scenario = {
+      id: generateScenarioId(),
+      name: scenarioName,
+      timestamp: Date.now(),
+      inputType,
+      inputText,
+      dispatches,
+      plan,
+      geojson
+    };
+
+    saveScenario(scenario);
+    alert('Scenario saved successfully!');
+  };
+
+  const handleLoadScenario = (scenario: Scenario) => {
+    setDispatches(scenario.dispatches);
+    setPlan(scenario.plan);
+    setGeojson(scenario.geojson);
+    setInputText(scenario.inputText);
+    setInputType(scenario.inputType);
+    setNotes([]);
+    setWarnings([]);
+    setAvailableDrones(null);
+    setError(null);
+  };
+
   const deliveryPoints = dispatches.map((d) => ({
     id: d.id,
     lng: d.delivery.lng,
@@ -176,6 +244,12 @@ export default function Home() {
               </span>
             </div>
             <div className="flex items-center gap-6">
+              <button
+                onClick={() => setShowScenariosModal(true)}
+                className="text-body uppercase hover:opacity-70 transition-opacity"
+              >
+                Saved
+              </button>
               <a href="#" className="text-body uppercase hover:opacity-70 transition-opacity">Docs</a>
               <a href="#" className="text-body uppercase hover:opacity-70 transition-opacity">About</a>
             </div>
@@ -232,12 +306,18 @@ export default function Home() {
         {/* Three-column layout */}
         <div className="grid lg:grid-cols-12 gap-6">
           {/* Left: Input (4 cols) */}
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-4 space-y-6">
             <NaturalLanguageInput
               onGenerate={handleGenerate}
               onPrescriptionConvert={handlePrescriptionConvert}
               isLoading={isLoading}
             />
+            {(prescriptionAnalysis || isAnalyzing) && (
+              <PrescriptionInsights
+                analysis={prescriptionAnalysis}
+                isLoading={isAnalyzing}
+              />
+            )}
           </div>
 
           {/* Middle: Dispatches (4 cols) */}
@@ -263,9 +343,24 @@ export default function Home() {
               showRestrictedAreas={true}
             />
             <PlanSummary plan={plan} />
+            {plan && geojson && (
+              <button
+                onClick={handleSaveScenario}
+                className="btn btn-secondary w-full"
+              >
+                SAVE SCENARIO
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Saved Scenarios Modal */}
+      <SavedScenarios
+        isOpen={showScenariosModal}
+        onClose={() => setShowScenariosModal(false)}
+        onLoad={handleLoadScenario}
+      />
 
       {/* Footer */}
       <footer style={{ borderTop: '1px solid var(--grey-light)', marginTop: '3rem', background: 'var(--white)' }}>

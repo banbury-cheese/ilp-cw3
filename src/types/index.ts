@@ -84,3 +84,21 @@ export interface ValidationError {
   message: string;
   dispatchId?: number;
 }
+
+export interface Scenario {
+  id: string;
+  name: string;
+  timestamp: number;
+  inputType: 'freetext' | 'prescription';
+  inputText: string;
+  dispatches: MedDispatchRec[];
+  plan: IlpPlanResponse;
+  geojson: GeoJsonLineString;
+}
+
+export interface AnimationState {
+  isPlaying: boolean;
+  currentStep: number;
+  speed: number;
+  totalSteps: number;
+}
