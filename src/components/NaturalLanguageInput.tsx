@@ -12,19 +12,19 @@ interface NaturalLanguageInputProps {
 const examplePrompts = [
   {
     title: 'COOLING REQUIRED',
-    text: 'Deliver 2kg of insulin that needs cooling to the Royal Infirmary tomorrow at 2pm'
+    text: 'Deliver 3kg of insulin requiring cooling to 55.95, -3.19 tomorrow at 2pm'
   },
   {
     title: 'HEATING REQUIRED',
-    text: 'Send 500g of warm blood samples to Western General Hospital today around 4pm, keep them heated'
+    text: 'Send 7kg of warm blood products to 55.96, -3.18 today at 4pm, needs heating'
   },
   {
-    title: 'MULTIPLE DELIVERIES',
-    text: 'Tomorrow morning: 1kg of vaccines (refrigerated) to Sick Kids, and in the afternoon send 750g of medication to Marchmont. Try to keep cost under £50.'
+    title: 'HEAVY LOAD',
+    text: 'Deliver 15kg of medical supplies to coordinates 55.975, -3.185 on Wednesday morning at 10am'
   },
   {
-    title: 'BASIC DELIVERY',
-    text: 'Deliver 300g of prescription medication to George Square at 3:30pm today'
+    title: 'NEAR OCEAN TERMINAL',
+    text: 'Send 4kg of medication with cooling to 55.98, -3.177 on Friday afternoon at 3pm'
   }
 ];
 
