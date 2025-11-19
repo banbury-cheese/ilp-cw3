@@ -7,12 +7,16 @@ import MapView from '@/components/MapView';
 import PlanSummary from '@/components/PlanSummary';
 import SavedScenarios from '@/components/SavedScenarios';
 import PrescriptionInsights, { PrescriptionAnalysis } from '@/components/PrescriptionInsights';
+import SandboxControls from '@/components/SandboxControls';
+import ExportsReports from '@/components/ExportsReports';
 import {
   MedDispatchRec,
   DispatchParseResult,
   GeoJsonLineString,
   IlpPlanResponse,
-  Scenario
+  Scenario,
+  SandboxZone,
+  SandboxComparison
 } from '@/types';
 import { validateDispatches, formatValidationErrors } from '@/lib/validation';
 import { saveScenario, generateScenarioId } from '@/lib/scenarios';
@@ -35,6 +39,14 @@ export default function Home() {
   // Prescription insights state
   const [prescriptionAnalysis, setPrescriptionAnalysis] = useState<PrescriptionAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Sandbox mode state
+  const [sandboxEnabled, setSandboxEnabled] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [drawingPoints, setDrawingPoints] = useState<[number, number][]>([]);
+  const [customZones, setCustomZones] = useState<SandboxZone[]>([]);
+  const [sandboxComparison, setSandboxComparison] = useState<SandboxComparison | null>(null);
+  const [isComparing, setIsComparing] = useState(false);
 
   const handleGenerate = async (text: string) => {
     setIsLoading(true);
@@ -226,6 +238,98 @@ export default function Home() {
     setError(null);
   };
 
+  // Sandbox mode handlers
+  const handleToggleSandbox = () => {
+    setSandboxEnabled(!sandboxEnabled);
+    if (sandboxEnabled) {
+      // Exiting sandbox mode - clear sandbox state
+      setIsDrawing(false);
+      setDrawingPoints([]);
+      setCustomZones([]);
+      setSandboxComparison(null);
+    }
+  };
+
+  const handleStartDrawing = () => {
+    setIsDrawing(true);
+    setDrawingPoints([]);
+  };
+
+  const handleCancelDrawing = () => {
+    setIsDrawing(false);
+    setDrawingPoints([]);
+  };
+
+  const handleMapClick = (lat: number, lng: number) => {
+    if (!isDrawing) return;
+
+    const newPoint: [number, number] = [lng, lat];
+    const newPoints = [...drawingPoints, newPoint];
+
+    // Check if clicking near first point to close polygon
+    if (drawingPoints.length >= 3) {
+      const [firstLng, firstLat] = drawingPoints[0];
+      const distance = Math.sqrt(
+        Math.pow(lng - firstLng, 2) + Math.pow(lat - firstLat, 2)
+      );
+
+      if (distance < 0.001) { // ~100m threshold
+        // Close the polygon and create zone
+        const zone: SandboxZone = {
+          id: `zone_${Date.now()}`,
+          name: `Custom Zone ${customZones.length + 1}`,
+          coordinates: [...drawingPoints, drawingPoints[0]], // Close the polygon
+          isNew: true
+        };
+        setCustomZones([...customZones, zone]);
+        setIsDrawing(false);
+        setDrawingPoints([]);
+        setSandboxComparison(null);
+        return;
+      }
+    }
+
+    setDrawingPoints(newPoints);
+  };
+
+  const handleRemoveZone = (id: string) => {
+    setCustomZones(customZones.filter(z => z.id !== id));
+    setSandboxComparison(null);
+  };
+
+  const handleClearAllZones = () => {
+    setCustomZones([]);
+    setSandboxComparison(null);
+  };
+
+  const handleCompare = async () => {
+    if (!plan || !geojson || customZones.length === 0) return;
+
+    setIsComparing(true);
+    try {
+      const response = await fetch('/api/sandbox/compare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          originalPlan: plan,
+          originalGeojson: geojson,
+          customZones
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Comparison failed');
+      }
+
+      const comparison = await response.json();
+      setSandboxComparison(comparison);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Comparison failed');
+    } finally {
+      setIsComparing(false);
+    }
+  };
+
   const deliveryPoints = dispatches.map((d) => ({
     id: d.id,
     lng: d.delivery.lng,
@@ -341,8 +445,28 @@ export default function Home() {
               deliveryPoints={deliveryPoints}
               showServicePoints={true}
               showRestrictedAreas={true}
+              sandboxMode={sandboxEnabled}
+              isDrawing={isDrawing}
+              drawingPoints={drawingPoints}
+              onMapClick={handleMapClick}
+              customZones={customZones}
+            />
+            <SandboxControls
+              isEnabled={sandboxEnabled}
+              onToggle={handleToggleSandbox}
+              isDrawing={isDrawing}
+              onStartDrawing={handleStartDrawing}
+              onCancelDrawing={handleCancelDrawing}
+              customZones={customZones}
+              onRemoveZone={handleRemoveZone}
+              onClearAll={handleClearAllZones}
+              comparison={sandboxComparison}
+              isComparing={isComparing}
+              onCompare={handleCompare}
+              hasPlan={!!plan}
             />
             <PlanSummary plan={plan} />
+            <ExportsReports geojson={geojson} plan={plan} />
             {plan && geojson && (
               <button
                 onClick={handleSaveScenario}
