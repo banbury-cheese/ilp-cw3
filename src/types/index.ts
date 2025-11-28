@@ -59,8 +59,8 @@ export interface IlpPlanResponse {
 }
 
 export interface GeoJsonLineString {
-  type: "LineString";
-  coordinates: [number, number][];
+  type: "LineString" | "MultiLineString";
+  coordinates: [number, number][] | [number, number][][];
 }
 
 export interface PlanRoutesResponse {
@@ -102,21 +102,4 @@ export interface AnimationState {
   currentStep: number;
   speed: number;
   totalSteps: number;
-}
-
-export interface SandboxZone {
-  id: string;
-  name: string;
-  coordinates: [number, number][];
-  isNew: boolean; // true if user-created, false if modified from original
-}
-
-export interface SandboxComparison {
-  originalCost: number;
-  originalMoves: number;
-  sandboxCost: number;
-  sandboxMoves: number;
-  costDifference: number;
-  movesDifference: number;
-  impactAnalysis: string;
 }

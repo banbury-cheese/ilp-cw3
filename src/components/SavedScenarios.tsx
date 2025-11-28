@@ -37,8 +37,8 @@ export default function SavedScenarios({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: 'rgba(0, 0, 0, 0.5)' }}
+      className="fixed inset-0 flex items-center justify-center"
+      style={{ background: 'rgba(0, 0, 0, 0.5)', zIndex: 9999 }}
       onClick={onClose}
     >
       <div
@@ -49,7 +49,9 @@ export default function SavedScenarios({
           maxHeight: '80vh',
           overflow: 'hidden',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          position: 'relative',
+          zIndex: 10000
         }}
         onClick={e => e.stopPropagation()}
       >

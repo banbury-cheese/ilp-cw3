@@ -1,25 +1,23 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import NaturalLanguageInput from '@/components/NaturalLanguageInput';
-import DispatchListEditor from '@/components/DispatchListEditor';
-import MapView from '@/components/MapView';
-import PlanSummary from '@/components/PlanSummary';
-import SavedScenarios from '@/components/SavedScenarios';
-import PrescriptionInsights, { PrescriptionAnalysis } from '@/components/PrescriptionInsights';
-import SandboxControls from '@/components/SandboxControls';
-import ExportsReports from '@/components/ExportsReports';
+import { useState } from "react";
+import NaturalLanguageInput from "@/components/NaturalLanguageInput";
+import DispatchListEditor from "@/components/DispatchListEditor";
+import MapView from "@/components/MapView";
+import PlanSummary from "@/components/PlanSummary";
+import SavedScenarios from "@/components/SavedScenarios";
+import PrescriptionInsights, {
+  PrescriptionAnalysis,
+} from "@/components/PrescriptionInsights";
 import {
   MedDispatchRec,
   DispatchParseResult,
   GeoJsonLineString,
   IlpPlanResponse,
   Scenario,
-  SandboxZone,
-  SandboxComparison
-} from '@/types';
-import { validateDispatches, formatValidationErrors } from '@/lib/validation';
-import { saveScenario, generateScenarioId } from '@/lib/scenarios';
+} from "@/types";
+import { validateDispatches, formatValidationErrors } from "@/lib/validation";
+import { saveScenario, generateScenarioId } from "@/lib/scenarios";
 
 export default function Home() {
   const [dispatches, setDispatches] = useState<MedDispatchRec[]>([]);
@@ -33,56 +31,74 @@ export default function Home() {
 
   // Saved scenarios state
   const [showScenariosModal, setShowScenariosModal] = useState(false);
-  const [inputText, setInputText] = useState('');
-  const [inputType, setInputType] = useState<'freetext' | 'prescription'>('freetext');
+  const [inputText, setInputText] = useState("");
+  const [inputType, setInputType] = useState<"freetext" | "prescription">(
+    "freetext"
+  );
 
   // Prescription insights state
-  const [prescriptionAnalysis, setPrescriptionAnalysis] = useState<PrescriptionAnalysis | null>(null);
+  const [prescriptionAnalysis, setPrescriptionAnalysis] =
+    useState<PrescriptionAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  // Sandbox mode state
-  const [sandboxEnabled, setSandboxEnabled] = useState(false);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [drawingPoints, setDrawingPoints] = useState<[number, number][]>([]);
-  const [customZones, setCustomZones] = useState<SandboxZone[]>([]);
-  const [sandboxComparison, setSandboxComparison] = useState<SandboxComparison | null>(null);
-  const [isComparing, setIsComparing] = useState(false);
 
   const handleGenerate = async (text: string) => {
     setIsLoading(true);
+    setIsAnalyzing(true);
     setError(null);
     setAvailableDrones(null);
     setPlan(null);
     setGeojson(null);
     setInputText(text);
-    setInputType('freetext');
+    setInputType("freetext");
     setPrescriptionAnalysis(null);
 
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
       const now = new Date();
-      const defaultTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const defaultTime = `${String(now.getHours()).padStart(2, "0")}:${String(
+        now.getMinutes()
+      ).padStart(2, "0")}`;
       const idBase = Date.now() % 10000;
 
-      const response = await fetch('/api/nlp/parse-dispatches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inputText: text, defaultDate: today, defaultTime, idBase })
-      });
+      // Run both parsing and analysis in parallel
+      const [parseResponse, analysisResponse] = await Promise.all([
+        fetch("/api/nlp/parse-dispatches", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            inputText: text,
+            defaultDate: today,
+            defaultTime,
+            idBase,
+          }),
+        }),
+        fetch("/api/prescriptions/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        }),
+      ]);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || 'Failed to parse dispatches');
+      if (!parseResponse.ok) {
+        const errorData = await parseResponse.json();
+        throw new Error(errorData.details || "Failed to parse dispatches");
       }
 
-      const result: DispatchParseResult = await response.json();
+      const result: DispatchParseResult = await parseResponse.json();
       setDispatches(result.dispatches);
       setNotes(result.notes);
       setWarnings(result.warnings);
+
+      // Handle analysis response (don't fail if analysis fails)
+      if (analysisResponse.ok) {
+        const analysis = await analysisResponse.json();
+        setPrescriptionAnalysis(analysis);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsLoading(false);
+      setIsAnalyzing(false);
     }
   };
 
@@ -94,32 +110,39 @@ export default function Home() {
     setPlan(null);
     setGeojson(null);
     setInputText(prescriptionText);
-    setInputType('prescription');
+    setInputType("prescription");
     setPrescriptionAnalysis(null);
 
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
       const now = new Date();
-      const defaultTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const defaultTime = `${String(now.getHours()).padStart(2, "0")}:${String(
+        now.getMinutes()
+      ).padStart(2, "0")}`;
       const idBase = Date.now() % 10000;
 
       // Run both the conversion and analysis in parallel
       const [convertResponse, analysisResponse] = await Promise.all([
-        fetch('/api/prescriptions/convert', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: prescriptionText, defaultDate: today, defaultTime, idBase })
+        fetch("/api/prescriptions/convert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: prescriptionText,
+            defaultDate: today,
+            defaultTime,
+            idBase,
+          }),
         }),
-        fetch('/api/prescriptions/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: prescriptionText })
-        })
+        fetch("/api/prescriptions/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: prescriptionText }),
+        }),
       ]);
 
       if (!convertResponse.ok) {
         const errorData = await convertResponse.json();
-        throw new Error(errorData.details || 'Failed to convert prescription');
+        throw new Error(errorData.details || "Failed to convert prescription");
       }
 
       const result: DispatchParseResult = await convertResponse.json();
@@ -133,7 +156,7 @@ export default function Home() {
         setPrescriptionAnalysis(analysis);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsLoading(false);
       setIsAnalyzing(false);
@@ -152,21 +175,21 @@ export default function Home() {
     }
 
     try {
-      const response = await fetch('/api/ilp/query-available-drones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dispatches)
+      const response = await fetch("/api/ilp/query-available-drones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dispatches),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.details || 'Failed to query drones');
+        throw new Error(errorData.details || "Failed to query drones");
       }
 
       const result = await response.json();
       setAvailableDrones(result.drones);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -184,22 +207,22 @@ export default function Home() {
     }
 
     try {
-      const response = await fetch('/api/ilp/plan-routes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dispatches)
+      const response = await fetch("/api/ilp/plan-routes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dispatches),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.details || 'Failed to plan routes');
+        throw new Error(errorData.details || "Failed to plan routes");
       }
 
       const result = await response.json();
       setPlan(result.plan);
       setGeojson(result.geojson);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -208,7 +231,10 @@ export default function Home() {
   const handleSaveScenario = () => {
     if (!plan || !geojson) return;
 
-    const scenarioName = prompt('Enter a name for this scenario:', `Scenario ${new Date().toLocaleDateString()}`);
+    const scenarioName = prompt(
+      "Enter a name for this scenario:",
+      `Scenario ${new Date().toLocaleDateString()}`
+    );
     if (!scenarioName) return;
 
     const scenario: Scenario = {
@@ -219,11 +245,11 @@ export default function Home() {
       inputText,
       dispatches,
       plan,
-      geojson
+      geojson,
     };
 
     saveScenario(scenario);
-    alert('Scenario saved successfully!');
+    alert("Scenario saved successfully!");
   };
 
   const handleLoadScenario = (scenario: Scenario) => {
@@ -238,114 +264,31 @@ export default function Home() {
     setError(null);
   };
 
-  // Sandbox mode handlers
-  const handleToggleSandbox = () => {
-    setSandboxEnabled(!sandboxEnabled);
-    if (sandboxEnabled) {
-      // Exiting sandbox mode - clear sandbox state
-      setIsDrawing(false);
-      setDrawingPoints([]);
-      setCustomZones([]);
-      setSandboxComparison(null);
-    }
-  };
-
-  const handleStartDrawing = () => {
-    setIsDrawing(true);
-    setDrawingPoints([]);
-  };
-
-  const handleCancelDrawing = () => {
-    setIsDrawing(false);
-    setDrawingPoints([]);
-  };
-
-  const handleMapClick = (lat: number, lng: number) => {
-    if (!isDrawing) return;
-
-    const newPoint: [number, number] = [lng, lat];
-    const newPoints = [...drawingPoints, newPoint];
-
-    // Check if clicking near first point to close polygon
-    if (drawingPoints.length >= 3) {
-      const [firstLng, firstLat] = drawingPoints[0];
-      const distance = Math.sqrt(
-        Math.pow(lng - firstLng, 2) + Math.pow(lat - firstLat, 2)
-      );
-
-      if (distance < 0.001) { // ~100m threshold
-        // Close the polygon and create zone
-        const zone: SandboxZone = {
-          id: `zone_${Date.now()}`,
-          name: `Custom Zone ${customZones.length + 1}`,
-          coordinates: [...drawingPoints, drawingPoints[0]], // Close the polygon
-          isNew: true
-        };
-        setCustomZones([...customZones, zone]);
-        setIsDrawing(false);
-        setDrawingPoints([]);
-        setSandboxComparison(null);
-        return;
-      }
-    }
-
-    setDrawingPoints(newPoints);
-  };
-
-  const handleRemoveZone = (id: string) => {
-    setCustomZones(customZones.filter(z => z.id !== id));
-    setSandboxComparison(null);
-  };
-
-  const handleClearAllZones = () => {
-    setCustomZones([]);
-    setSandboxComparison(null);
-  };
-
-  const handleCompare = async () => {
-    if (!plan || !geojson || customZones.length === 0) return;
-
-    setIsComparing(true);
-    try {
-      const response = await fetch('/api/sandbox/compare', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          originalPlan: plan,
-          originalGeojson: geojson,
-          customZones
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Comparison failed');
-      }
-
-      const comparison = await response.json();
-      setSandboxComparison(comparison);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Comparison failed');
-    } finally {
-      setIsComparing(false);
-    }
-  };
-
-  const deliveryPoints = dispatches.map((d) => ({
-    id: d.id,
-    lng: d.delivery.lng,
-    lat: d.delivery.lat
-  }));
+  const deliveryPoints = dispatches
+    .filter((d) => d.delivery && d.delivery.lat && d.delivery.lng)
+    .map((d) => ({
+      id: d.id,
+      lng: d.delivery.lng,
+      lat: d.delivery.lat,
+    }));
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--grey-light)' }}>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ background: "var(--grey-light)" }}
+    >
       {/* Navigation */}
-      <nav style={{ background: 'var(--white)', borderBottom: '1px solid var(--grey-light)' }}>
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+      <nav
+        style={{
+          background: "var(--white)",
+          borderBottom: "1px solid var(--grey-light)",
+        }}
+        className="flex items-center justify-center"
+      >
+        <div className=" w-[95%] mx-auto px-6 lg:px-8">
           <div className="flex justify-between h-14">
             <div className="flex items-center">
-              <span className="text-section">
-                ILP DISPATCH STUDIO
-              </span>
+              <span className="text-section">ILP DISPATCH STUDIO</span>
             </div>
             <div className="flex items-center gap-6">
               <button
@@ -354,15 +297,13 @@ export default function Home() {
               >
                 Saved
               </button>
-              <a href="#" className="text-body uppercase hover:opacity-70 transition-opacity">Docs</a>
-              <a href="#" className="text-body uppercase hover:opacity-70 transition-opacity">About</a>
             </div>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <div style={{ background: 'var(--white)', borderBottom: '1px solid var(--grey-light)' }}>
+      {/* <div style={{ background: 'var(--white)', borderBottom: '1px solid var(--grey-light)' }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
           <div className="max-w-2xl">
             <h1 className="text-display mb-4">
@@ -379,28 +320,58 @@ export default function Home() {
             </a>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Main Workspace */}
-      <div id="workspace" className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+      <div
+        id="workspace"
+        className="w-full h-full py-4 px-4 flex items-center justify-center flex-1"
+      >
         {/* Error display */}
         {error && (
           <div className="alert alert-error mb-6">
             <div className="flex items-start gap-3">
-              <svg className="h-5 w-5 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="h-5 w-5 mt-0.5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <div className="flex-1">
-                <p className="text-label" style={{ color: 'var(--error-text)', marginBottom: '4px' }}>ERROR</p>
-                <p className="text-body" style={{ color: 'var(--error-text)' }}>{error}</p>
+                <p
+                  className="text-label"
+                  style={{ color: "var(--error-text)", marginBottom: "4px" }}
+                >
+                  ERROR
+                </p>
+                <p className="text-body" style={{ color: "var(--error-text)" }}>
+                  {error}
+                </p>
               </div>
               <button
                 onClick={() => setError(null)}
                 className="hover:opacity-70 transition-opacity"
-                style={{ color: 'var(--error-text)' }}
+                style={{ color: "var(--error-text)" }}
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -445,28 +416,9 @@ export default function Home() {
               deliveryPoints={deliveryPoints}
               showServicePoints={true}
               showRestrictedAreas={true}
-              sandboxMode={sandboxEnabled}
-              isDrawing={isDrawing}
-              drawingPoints={drawingPoints}
-              onMapClick={handleMapClick}
-              customZones={customZones}
-            />
-            <SandboxControls
-              isEnabled={sandboxEnabled}
-              onToggle={handleToggleSandbox}
-              isDrawing={isDrawing}
-              onStartDrawing={handleStartDrawing}
-              onCancelDrawing={handleCancelDrawing}
-              customZones={customZones}
-              onRemoveZone={handleRemoveZone}
-              onClearAll={handleClearAllZones}
-              comparison={sandboxComparison}
-              isComparing={isComparing}
-              onCompare={handleCompare}
-              hasPlan={!!plan}
+              plan={plan}
             />
             <PlanSummary plan={plan} />
-            <ExportsReports geojson={geojson} plan={plan} />
             {plan && geojson && (
               <button
                 onClick={handleSaveScenario}
@@ -487,15 +439,39 @@ export default function Home() {
       />
 
       {/* Footer */}
-      <footer style={{ borderTop: '1px solid var(--grey-light)', marginTop: '3rem', background: 'var(--white)' }}>
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-6">
+      <footer
+        style={{
+          borderTop: "1px solid var(--grey-light)",
+          marginTop: "0",
+          background: "var(--white)",
+        }}
+      >
+        <div className="w-[95%] mx-auto px-6 lg:px-8 my-2">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-small uppercase">
-              ILP Dispatch Studio - Drone-based medical delivery
+              <span className="text-[0.5rem] mr-2">Built by </span>{" "}
+              <a
+                href="https://itskay.co/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono"
+              >
+                itskay.co
+              </a>
             </p>
             <div className="flex items-center gap-6">
-              <a href="#" className="text-small uppercase hover:opacity-70 transition-opacity">Privacy</a>
-              <a href="#" className="text-small uppercase hover:opacity-70 transition-opacity">Terms</a>
+              <a
+                href="#"
+                className="text-small uppercase hover:opacity-70 transition-opacity"
+              >
+                Github
+              </a>
+              <a
+                href="#"
+                className="text-small uppercase hover:opacity-70 transition-opacity"
+              >
+                Contact
+              </a>
             </div>
           </div>
         </div>

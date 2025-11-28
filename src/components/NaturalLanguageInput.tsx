@@ -11,21 +11,25 @@ interface NaturalLanguageInputProps {
 
 const examplePrompts = [
   {
-    title: 'COOLING REQUIRED',
-    text: 'Deliver 3kg of insulin requiring cooling to 55.95, -3.19 tomorrow at 2pm'
+    title: "TEMPERATURE-SENSITIVE INSULIN",
+    text: "Deliver 3kg of insulin requiring cooling to 55.95, -3.19 tomorrow at 2pm",
   },
   {
-    title: 'HEATING REQUIRED',
-    text: 'Send 7kg of warm blood products to 55.96, -3.18 today at 4pm, needs heating'
+    title: "URGENT BLOOD PRODUCTS",
+    text: "Send 7kg of warm blood products to Royal Infirmary, needs heating, today at 4pm, max cost £50",
   },
   {
-    title: 'HEAVY LOAD',
-    text: 'Deliver 15kg of medical supplies to coordinates 55.975, -3.185 on Wednesday morning at 10am'
+    title: "MULTI-STOP DELIVERY",
+    text: "Deliver 2kg antibiotics to 61/3 Brunswick St, Edinburgh at 10am and 3.5kg surgical supplies with cooling to 2 Industry Ln at 2pm tomorrow",
   },
   {
-    title: 'NEAR OCEAN TERMINAL',
-    text: 'Send 4kg of medication with cooling to 55.98, -3.177 on Friday afternoon at 3pm'
-  }
+    title: "ADDRESS-BASED ROUTING",
+    text: "Send 4kg of medication with cooling to Ocean Terminal on Friday afternoon at 3pm",
+  },
+  {
+    title: "COMPLEX PRESCRIPTION",
+    text: "Deliver 1.5kg insulin (cooling required) and 2kg antibiotics to Meadows Medical Practice tomorrow morning at 9am, budget £30",
+  },
 ];
 
 type TabType = 'freetext' | 'prescription';

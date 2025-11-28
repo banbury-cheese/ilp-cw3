@@ -74,7 +74,8 @@ You MUST respond with JSON only, no extra text before or after the JSON object.
       },
       "delivery": {
         "lng": <longitude>,
-        "lat": <latitude>
+        "lat": <latitude>,
+        "address": <string>
       }
     }
   ],
@@ -85,18 +86,23 @@ You MUST respond with JSON only, no extra text before or after the JSON object.
 ## Location Mapping
 
 Use these coordinates for known locations in Edinburgh:
-- "Royal Infirmary" / "Edinburgh Royal Infirmary" → lng: -3.177, lat: 55.940
-- "Western General Hospital" → lng: -3.235, lat: 55.963
-- "St John's Hospital" → lng: -3.519, lat: 55.895
-- "Sick Kids" / "Royal Hospital for Sick Children" → lng: -3.212, lat: 55.922
-- "Marchmont" → lng: -3.198, lat: 55.935
-- "Appleton Tower" → lng: -3.1863580789, lat: 55.9446806671
-- "Ocean Terminal" → lng: -3.1800, lat: 55.9820
-- "George Square" → lng: -3.1890, lat: 55.9437
-- "Waverley Station" → lng: -3.1900, lat: 55.9520
-- "Edinburgh Airport" → lng: -3.3725, lat: 55.9508
+- "Royal Infirmary" / "Edinburgh Royal Infirmary" / "ERI" / "RIE" → lng: -3.177, lat: 55.940, address: "Royal Infirmary of Edinburgh"
+- "Western General Hospital" / "WGH" → lng: -3.235, lat: 55.963, address: "Western General Hospital"
+- "St John's Hospital" → lng: -3.519, lat: 55.895, address: "St John's Hospital, Livingston"
+- "Sick Kids" / "Royal Hospital for Sick Children" / "RHSC" → lng: -3.212, lat: 55.922, address: "Royal Hospital for Children & Young People"
+- "Marchmont" → lng: -3.198, lat: 55.935, address: "Marchmont, Edinburgh"
+- "Appleton Tower" → lng: -3.1863580789, lat: 55.9446806671, address: "Appleton Tower, Edinburgh"
+- "Ocean Terminal" → lng: -3.18, lat: 55.982, address: "Ocean Terminal, Edinburgh"
+- "George Square" → lng: -3.189, lat: 55.9437, address: "George Square, Edinburgh"
+- "Waverley Station" → lng: -3.190, lat: 55.952, address: "Waverley Station, Edinburgh"
+- "Edinburgh Airport" → lng: -3.3725, lat: 55.9508, address: "Edinburgh Airport"
 
-If a location is not in this list, approximate based on context or set delivery to null and add a warning.
+If a location is not in this list:
+- set "lng": 0, "lat": 0
+- set "address" to the location name as written in the text
+- add a note: "Location '<location>' will be geocoded automatically"
+
+IMPORTANT: NEVER set delivery to null. Always provide an address field, even if coordinates are unknown (set to 0).
 
 ## Parsing Rules
 

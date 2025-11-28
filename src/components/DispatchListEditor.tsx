@@ -322,13 +322,13 @@ export default function DispatchListEditor({
             <div
               key={dispatch.id}
               style={{
-                padding: '1rem',
+                padding: '0.875rem',
                 borderRadius: '0',
                 border: `1px solid ${hasErrors ? 'var(--red)' : 'var(--grey-light)'}`,
                 background: hasErrors ? 'var(--error-bg)' : 'var(--grey-input)'
               }}
             >
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2.5">
                 <div className="flex items-center gap-2">
                   <span className="text-mono" style={{ fontWeight: 700 }}>
                     DISPATCH #{dispatch.id}
@@ -354,7 +354,7 @@ export default function DispatchListEditor({
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 {/* ID */}
                 <div>
                   <label className="text-label block mb-1">ID</label>
@@ -469,7 +469,7 @@ export default function DispatchListEditor({
                   <input
                     type="number"
                     step="0.0001"
-                    value={dispatch.delivery.lng}
+                    value={dispatch.delivery.lng ?? ''}
                     onChange={(e) => {
                       const newLng = parseFloat(e.target.value) || 0;
                       handleCoordinatesChange(index, undefined, newLng);
@@ -484,7 +484,7 @@ export default function DispatchListEditor({
                   <input
                     type="number"
                     step="0.0001"
-                    value={dispatch.delivery.lat}
+                    value={dispatch.delivery.lat ?? ''}
                     onChange={(e) => {
                       const newLat = parseFloat(e.target.value) || 0;
                       handleCoordinatesChange(index, newLat, undefined);

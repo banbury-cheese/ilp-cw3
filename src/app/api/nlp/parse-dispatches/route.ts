@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callLLM, DISPATCH_PARSE_SYSTEM_PROMPT } from '@/lib/llm';
 import { ParseDispatchesRequest, DispatchParseResult } from '@/types';
+import { geocodeAddress } from '@/lib/geocoding';
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,6 +71,26 @@ Remember: Respond with ONLY the JSON object, no additional text.`;
     if (result.dispatches.length === 0 && result.warnings.length === 0) {
       result.warnings.push('Could not infer any deliveries from this text.');
     }
+
+    // Automatically geocode any locations with 0,0 coordinates
+    const geocodingPromises = result.dispatches.map(async (dispatch) => {
+      if (dispatch.delivery.address && (dispatch.delivery.lat === 0 || dispatch.delivery.lng === 0)) {
+        try {
+          const geocoded = await geocodeAddress(dispatch.delivery.address);
+          dispatch.delivery.lat = geocoded.lat;
+          dispatch.delivery.lng = geocoded.lng;
+          dispatch.delivery.address = geocoded.formattedAddress;
+          result.notes.push(`Geocoded location "${dispatch.delivery.address}" to coordinates`);
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Geocoding failed';
+          result.warnings.push(`Could not geocode "${dispatch.delivery.address}": ${errorMessage}`);
+          // Keep coordinates as 0,0 if geocoding fails
+        }
+      }
+    });
+
+    // Wait for all geocoding to complete
+    await Promise.all(geocodingPromises);
 
     return NextResponse.json(result);
 

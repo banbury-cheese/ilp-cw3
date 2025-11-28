@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callLLM } from '@/lib/llm';
 import { DispatchParseResult } from '@/types';
+import { geocodeAddress } from '@/lib/geocoding';
 
 const PRESCRIPTION_SYSTEM_PROMPT = `You are an AI assistant that converts medical prescription/free-text requests into structured MedDispatchRec JSON objects for a drone-based medicine delivery system (ILP).
 
@@ -28,13 +29,14 @@ Each dispatch in "dispatches" MUST follow:
     "heating": <boolean>,
     "maxCost": <optional number>
   },
-  "delivery": { "lng": <number>, "lat": <number> } | null
+  "delivery": { "lng": <number>, "lat": <number>, "address": <string> }
 }
 
 Rules:
-- "delivery" may be null ONLY if the destination cannot be mapped to coordinates. If null, add a warning explaining what was unknown.
+- "delivery" MUST always have an "address" field with the location name/address from the text
+- "lng" and "lat" should be set to 0 if unknown (they will be geocoded automatically by the system)
+- "address" is REQUIRED: always extract the location/destination name from the text
 - "maxCost" is OPTIONAL: omit it entirely if not specified/inferred.
-- If any required field is unknown, use defaults (date/time) where allowed, but do NOT invent coordinates.
 
 ## Reference Defaults
 
@@ -49,19 +51,22 @@ Interpret relative dates using defaultDate as 'today'.
 
 Use these coordinates if the text matches the location name (case-insensitive, allow abbreviations):
 
-- "Royal Infirmary" / "Edinburgh Royal Infirmary" / "ERI" / "RIE" → lng: -3.177, lat: 55.940
-- "Western General Hospital" / "WGH" → lng: -3.235, lat: 55.963
-- "St John's Hospital" → lng: -3.519, lat: 55.895
-- "Sick Kids" / "Royal Hospital for Sick Children" / "RHSC" → lng: -3.212, lat: 55.922
-- "Appleton Tower" → lng: -3.1863580789, lat: 55.9446806671
-- "Ocean Terminal" → lng: -3.18, lat: 55.982
-- "George Square" → lng: -3.189, lat: 55.9437
-- "Lauriston Place" → lng: -3.194, lat: 55.9438
-- "Little France" → lng: -3.136, lat: 55.921
+- "Royal Infirmary" / "Edinburgh Royal Infirmary" / "ERI" / "RIE" → lng: -3.177, lat: 55.940, address: "Royal Infirmary of Edinburgh"
+- "Western General Hospital" / "WGH" → lng: -3.235, lat: 55.963, address: "Western General Hospital"
+- "St John's Hospital" → lng: -3.519, lat: 55.895, address: "St John's Hospital, Livingston"
+- "Sick Kids" / "Royal Hospital for Sick Children" / "RHSC" → lng: -3.212, lat: 55.922, address: "Royal Hospital for Children & Young People"
+- "Appleton Tower" → lng: -3.1863580789, lat: 55.9446806671, address: "Appleton Tower, Edinburgh"
+- "Ocean Terminal" → lng: -3.18, lat: 55.982, address: "Ocean Terminal, Edinburgh"
+- "George Square" → lng: -3.189, lat: 55.9437, address: "George Square, Edinburgh"
+- "Lauriston Place" → lng: -3.194, lat: 55.9438, address: "Lauriston Place, Edinburgh"
+- "Little France" → lng: -3.136, lat: 55.921, address: "Little France, Edinburgh"
 
 If the destination is not in this list:
-- set "delivery": null
-- add warning: "Unknown delivery address '<location>'; coordinates must be set manually."
+- set "lng": 0, "lat": 0
+- set "address" to the location name as written in the text
+- add a note: "Location '<location>' will be geocoded automatically"
+
+IMPORTANT: NEVER set delivery to null. Always provide an address field, even if coordinates are unknown (set to 0).
 
 ## Parsing Rules
 
@@ -228,6 +233,26 @@ Remember: Respond with ONLY the JSON object, no additional text.`;
     if (result.dispatches.length === 0 && result.warnings.length === 0) {
       result.warnings.push('Could not extract any deliveries from this prescription.');
     }
+
+    // Automatically geocode any locations with 0,0 coordinates
+    const geocodingPromises = result.dispatches.map(async (dispatch, index) => {
+      if (dispatch.delivery.address && (dispatch.delivery.lat === 0 || dispatch.delivery.lng === 0)) {
+        try {
+          const geocoded = await geocodeAddress(dispatch.delivery.address);
+          dispatch.delivery.lat = geocoded.lat;
+          dispatch.delivery.lng = geocoded.lng;
+          dispatch.delivery.address = geocoded.formattedAddress;
+          result.notes.push(`Geocoded location "${dispatch.delivery.address}" to coordinates`);
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Geocoding failed';
+          result.warnings.push(`Could not geocode "${dispatch.delivery.address}": ${errorMessage}`);
+          // Keep coordinates as 0,0 if geocoding fails
+        }
+      }
+    });
+
+    // Wait for all geocoding to complete
+    await Promise.all(geocodingPromises);
 
     return NextResponse.json(result);
 

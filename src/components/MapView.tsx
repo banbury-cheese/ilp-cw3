@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { GeoJsonLineString, ServicePoint, RestrictedArea, SandboxZone } from '@/types';
-import { calculateHeading, calculateCumulativeCost } from '@/lib/scenarios';
+import { GeoJsonLineString, ServicePoint, RestrictedArea, IlpPlanResponse } from '@/types';
+import { calculateHeading } from '@/lib/scenarios';
 
 // Service points in Edinburgh
 const servicePoints: ServicePoint[] = [
@@ -78,13 +78,8 @@ interface MapViewProps {
   deliveryPoints?: { lng: number; lat: number; id: number }[];
   showServicePoints?: boolean;
   showRestrictedAreas?: boolean;
-  // Sandbox mode props
-  sandboxMode?: boolean;
-  isDrawing?: boolean;
-  drawingPoints?: [number, number][];
-  onMapClick?: (lat: number, lng: number) => void;
-  customZones?: SandboxZone[];
-  sandboxGeojson?: GeoJsonLineString | null;
+  // Plan data for accurate cost calculation
+  plan?: IlpPlanResponse | null;
 }
 
 export default function MapView({
@@ -92,20 +87,10 @@ export default function MapView({
   deliveryPoints = [],
   showServicePoints = true,
   showRestrictedAreas = true,
-  sandboxMode = false,
-  isDrawing = false,
-  drawingPoints = [],
-  onMapClick,
-  customZones = [],
-  sandboxGeojson = null
+  plan = null
 }: MapViewProps) {
   const [MapComponent, setMapComponent] = useState<React.ComponentType<{
     dronePosition?: [number, number];
-    onMapClick?: (lat: number, lng: number) => void;
-    isDrawing?: boolean;
-    drawingPoints?: [number, number][];
-    customZones?: SandboxZone[];
-    sandboxGeojson?: GeoJsonLineString | null;
   }> | null>(null);
 
   // Animation state
@@ -114,24 +99,32 @@ export default function MapView({
   const [speed, setSpeed] = useState(1);
   const animationRef = useRef<number | null>(null);
 
-  const totalSteps = geojson?.coordinates.length || 0;
+  // Flatten MultiLineString coordinates into a single path for animation
+  const flattenedCoordinates = geojson
+    ? (geojson.type === 'MultiLineString'
+        ? (geojson.coordinates as [number, number][][]).flat()
+        : geojson.coordinates as [number, number][])
+    : [];
+  const totalSteps = flattenedCoordinates.length;
   const hasRoute = totalSteps > 0;
 
   // Current position for drone marker
   const dronePosition: [number, number] | undefined = hasRoute && currentStep < totalSteps
-    ? [geojson!.coordinates[currentStep][1], geojson!.coordinates[currentStep][0]]
+    ? [flattenedCoordinates[currentStep][1], flattenedCoordinates[currentStep][0]]
     : undefined;
 
   // Calculate heading
   const heading = hasRoute && currentStep < totalSteps - 1
     ? calculateHeading(
-        geojson!.coordinates[currentStep],
-        geojson!.coordinates[currentStep + 1]
+        flattenedCoordinates[currentStep],
+        flattenedCoordinates[currentStep + 1]
       )
     : 'N';
 
-  // Calculate cumulative cost
-  const cumulativeCost = calculateCumulativeCost(currentStep);
+  // Calculate cumulative cost based on actual plan data
+  const cumulativeCost = plan && plan.totalMoves > 0
+    ? (currentStep / plan.totalMoves) * plan.totalCost
+    : currentStep * 0.00015; // Fallback to estimate if plan not available
 
   // Animation loop
   const animate = useCallback(() => {
@@ -209,34 +202,12 @@ export default function MapView({
           iconAnchor: [12, 12]
         });
 
-        const { MapContainer, TileLayer, Polyline, Marker, Popup, Polygon, useMapEvents, CircleMarker } = L;
-
-        // Component to handle map clicks
-        const MapClickHandler = ({ onMapClick, isDrawing }: { onMapClick?: (lat: number, lng: number) => void; isDrawing?: boolean }) => {
-          useMapEvents({
-            click: (e) => {
-              if (isDrawing && onMapClick) {
-                onMapClick(e.latlng.lat, e.latlng.lng);
-              }
-            },
-          });
-          return null;
-        };
+        const { MapContainer, TileLayer, Polyline, Marker, Popup, Polygon } = L;
 
         const Map = ({
-          dronePosition,
-          onMapClick: mapClickHandler,
-          isDrawing: drawing,
-          drawingPoints: points,
-          customZones: zones,
-          sandboxGeojson: sandboxPath
+          dronePosition
         }: {
           dronePosition?: [number, number];
-          onMapClick?: (lat: number, lng: number) => void;
-          isDrawing?: boolean;
-          drawingPoints?: [number, number][];
-          customZones?: SandboxZone[];
-          sandboxGeojson?: GeoJsonLineString | null;
         }) => (
           <MapContainer
             center={[55.945, -3.19]}
@@ -247,8 +218,6 @@ export default function MapView({
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-
-            <MapClickHandler onMapClick={mapClickHandler} isDrawing={drawing} />
 
             {showServicePoints &&
               servicePoints.map((point) => (
@@ -284,70 +253,29 @@ export default function MapView({
                 </Polygon>
               ))}
 
-            {/* Custom sandbox zones */}
-            {zones && zones.map((zone) => (
-              <Polygon
-                key={zone.id}
-                positions={zone.coordinates.map(([lng, lat]) => [lat, lng])}
-                pathOptions={{
-                  color: '#feb300',
-                  fillColor: '#feb300',
-                  fillOpacity: 0.3,
-                  dashArray: '5, 5'
-                }}
-              >
-                <Popup>{zone.name} (Sandbox)</Popup>
-              </Polygon>
-            ))}
-
-            {/* Drawing in progress */}
-            {drawing && points && points.length > 0 && (
-              <>
-                <Polyline
-                  positions={points.map(([lng, lat]) => [lat, lng])}
-                  pathOptions={{
-                    color: '#feb300',
-                    weight: 2,
-                    dashArray: '5, 5'
-                  }}
-                />
-                {points.map(([lng, lat], i) => (
-                  <CircleMarker
-                    key={i}
-                    center={[lat, lng]}
-                    radius={5}
-                    pathOptions={{
-                      color: '#feb300',
-                      fillColor: i === 0 ? '#feb300' : '#fff',
-                      fillOpacity: 1
-                    }}
-                  />
-                ))}
-              </>
-            )}
-
-            {/* Original route */}
             {geojson && geojson.coordinates.length > 0 && (
-              <Polyline
-                positions={geojson.coordinates.map(([lng, lat]) => [lat, lng])}
-                pathOptions={{
-                  color: sandboxPath ? '#0064e2' : '#0064e2',
-                  weight: 3,
-                  opacity: sandboxPath ? 0.4 : 0.8
-                }}
-              />
-            )}
-
-            {/* Sandbox route */}
-            {sandboxPath && sandboxPath.coordinates.length > 0 && (
-              <Polyline
-                positions={sandboxPath.coordinates.map(([lng, lat]) => [lat, lng])}
-                pathOptions={{
-                  color: '#026944',
-                  weight: 3,
-                  opacity: 0.8
-                }}
-              />
+              geojson.type === 'MultiLineString'
+                ? (geojson.coordinates as [number, number][][]).map((lineString, index) => (
+                    <Polyline
+                      key={index}
+                      positions={lineString.map(([lng, lat]) => [lat, lng])}
+                      pathOptions={{
+                        color: index === 0 ? '#0064e2' : '#026944',
+                        weight: 3,
+                        opacity: 0.8
+                      }}
+                    />
+                  ))
+                : (
+                    <Polyline
+                      positions={(geojson.coordinates as [number, number][]).map(([lng, lat]) => [lat, lng])}
+                      pathOptions={{
+                        color: '#0064e2',
+                        weight: 3,
+                        opacity: 0.8
+                      }}
+                    />
+                  )
             )}
 
             {dronePosition && (
@@ -361,7 +289,7 @@ export default function MapView({
         setMapComponent(() => Map);
       });
     });
-  }, [geojson, deliveryPoints, showServicePoints, showRestrictedAreas, customZones, sandboxGeojson, isDrawing, drawingPoints]);
+  }, [geojson, deliveryPoints, showServicePoints, showRestrictedAreas]);
 
   return (
     <div className="card">
@@ -386,12 +314,6 @@ export default function MapView({
               ROUTE
             </span>
           )}
-          {customZones.length > 0 && (
-            <span className="flex items-center gap-1">
-              <span style={{ width: '8px', height: '8px', background: 'var(--yellow)', borderRadius: '0' }}></span>
-              SANDBOX
-            </span>
-          )}
         </div>
       </div>
 
@@ -406,11 +328,6 @@ export default function MapView({
         {MapComponent ? (
           <MapComponent
             dronePosition={dronePosition}
-            onMapClick={onMapClick}
-            isDrawing={isDrawing}
-            drawingPoints={drawingPoints}
-            customZones={customZones}
-            sandboxGeojson={sandboxGeojson}
           />
         ) : (
           <div className="h-full flex items-center justify-center" style={{ color: 'var(--grey-dark)' }}>

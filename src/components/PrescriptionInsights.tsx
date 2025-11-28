@@ -9,11 +9,34 @@ interface Medication {
   notes?: string;
 }
 
+interface DrugInteraction {
+  type: 'major' | 'moderate' | 'minor';
+  message: string;
+}
+
+interface TemperatureValidation {
+  medication: string;
+  requiresCooling: boolean;
+  requiresHeating: boolean;
+  specialHandling: string[];
+}
+
+interface SafetyChecks {
+  hasInteractions: boolean;
+  hasMajorInteractions: boolean;
+  requiresColdChain: boolean;
+  requiresHeating: boolean;
+}
+
 export interface PrescriptionAnalysis {
   medications: Medication[];
   ambiguities: string[];
   warnings: string[];
   summary: string;
+  drugInteractions?: DrugInteraction[];
+  temperatureValidation?: TemperatureValidation[];
+  recognizedMedications?: string[];
+  safetyChecks?: SafetyChecks;
 }
 
 interface PrescriptionInsightsProps {
@@ -89,7 +112,7 @@ export default function PrescriptionInsights({
 
       {/* Summary */}
       {analysis.summary && (
-        <div className="mb-4" style={{ background: 'var(--grey-input)', padding: '1rem' }}>
+        <div className="mb-4" style={{ background: 'var(--grey-input)', padding: '0.875rem' }}>
           <p className="text-body">{analysis.summary}</p>
         </div>
       )}
@@ -104,7 +127,7 @@ export default function PrescriptionInsights({
                 key={index}
                 style={{
                   background: 'var(--grey-input)',
-                  padding: '0.75rem',
+                  padding: '0.7rem 0.875rem',
                   borderLeft: `3px solid ${
                     med.temperatureSensitive ? 'var(--blue)' : 'var(--grey-dark)'
                   }`
@@ -172,6 +195,146 @@ export default function PrescriptionInsights({
                 ))}
               </ul>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Drug Interactions */}
+      {analysis.drugInteractions && analysis.drugInteractions.length > 0 && (
+        <div className={`alert mb-4 ${
+          analysis.safetyChecks?.hasMajorInteractions ? 'alert-error' : 'alert-warning'
+        }`}>
+          <div className="flex items-start gap-2">
+            <svg
+              className="h-5 w-5 mt-0.5 flex-shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div>
+              <p className="text-label mb-1" style={{
+                color: analysis.safetyChecks?.hasMajorInteractions ? 'var(--error-text)' : 'inherit'
+              }}>
+                DRUG INTERACTIONS
+              </p>
+              <ul className="text-small space-y-2">
+                {analysis.drugInteractions.map((interaction, i) => (
+                  <li key={i}>
+                    <span className={`badge ${
+                      interaction.type === 'major' ? 'badge-error' :
+                      interaction.type === 'moderate' ? 'badge-warning' :
+                      'badge-neutral'
+                    }`} style={{ fontSize: '0.6rem', padding: '0.125rem 0.5rem', marginRight: '0.5rem' }}>
+                      {interaction.type.toUpperCase()}
+                    </span>
+                    {interaction.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Temperature Requirements */}
+      {analysis.temperatureValidation && analysis.temperatureValidation.length > 0 && (
+        <div className="mb-4">
+          <p className="text-label mb-2">TEMPERATURE REQUIREMENTS</p>
+          <div className="space-y-1">
+            {analysis.temperatureValidation.map((temp, i) => (
+              <div key={i} style={{ background: 'var(--grey-input)', padding: '0.625rem 0.875rem' }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-body">{temp.medication}</span>
+                  <div className="flex gap-2">
+                    {temp.requiresCooling && (
+                      <span className="badge badge-info" style={{ fontSize: '0.6rem' }}>
+                        COOLING
+                      </span>
+                    )}
+                    {temp.requiresHeating && (
+                      <span className="badge badge-warning" style={{ fontSize: '0.6rem' }}>
+                        HEATING
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {temp.specialHandling.length > 0 && (
+                  <p className="text-small mt-1" style={{ fontStyle: 'italic', color: 'var(--grey-dark)' }}>
+                    {temp.specialHandling.join(', ')}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Safety Summary */}
+      {analysis.safetyChecks && (
+        <div style={{
+          background: analysis.safetyChecks.hasMajorInteractions ? 'var(--error-bg)' :
+                     analysis.safetyChecks.hasInteractions ? 'var(--warning-bg)' :
+                     'var(--grey-input)',
+          padding: '0.875rem',
+          border: `1px solid ${
+            analysis.safetyChecks.hasMajorInteractions ? 'var(--red)' :
+            analysis.safetyChecks.hasInteractions ? 'var(--yellow)' :
+            'var(--grey)'
+          }`
+        }} className="mb-4">
+          <p className="text-label mb-2">SAFETY SUMMARY</p>
+          <div className="grid grid-cols-2 gap-2 text-small">
+            <div className="flex items-center gap-1">
+              {analysis.safetyChecks.hasInteractions ? (
+                <svg className="h-4 w-4" style={{ color: 'var(--red)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="h-4 w-4" style={{ color: 'var(--green)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+              <span>Drug Interactions</span>
+            </div>
+            <div className="flex items-center gap-1">
+              {analysis.safetyChecks.requiresColdChain ? (
+                <svg className="h-4 w-4" style={{ color: 'var(--blue)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              ) : (
+                <svg className="h-4 w-4" style={{ color: 'var(--green)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+              <span>Cold Chain</span>
+            </div>
+            <div className="flex items-center gap-1">
+              {analysis.safetyChecks.requiresHeating ? (
+                <svg className="h-4 w-4" style={{ color: 'var(--yellow)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              ) : (
+                <svg className="h-4 w-4" style={{ color: 'var(--green)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+              <span>Heating Required</span>
+            </div>
+            {analysis.recognizedMedications && (
+              <div className="flex items-center gap-1">
+                <svg className="h-4 w-4" style={{ color: 'var(--blue)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{analysis.recognizedMedications.length} Recognized</span>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callLLM } from '@/lib/llm';
+import { extractMedications, checkInteractions } from '@/lib/medications';
 
 export async function POST(request: NextRequest) {
   try {
@@ -75,7 +76,44 @@ ${text}`;
       });
     }
 
-    return NextResponse.json(insights);
+    // Enhance with medication database validation
+    const detectedMeds = extractMedications(text);
+    const interactions = checkInteractions(detectedMeds);
+
+    // Debug logging
+    console.log('Prescription text:', text);
+    console.log('Detected medications:', detectedMeds.map(m => m.name));
+    console.log('Found interactions:', interactions);
+
+    // Add drug interaction warnings
+    const interactionWarnings = interactions.map(int => ({
+      type: int.severity,
+      message: `${int.drug1} + ${int.drug2}: ${int.description}`
+    }));
+
+    // Add temperature requirement validation
+    const tempValidation = detectedMeds.map(med => ({
+      medication: med.name,
+      requiresCooling: med.requiresCooling,
+      requiresHeating: med.requiresHeating,
+      specialHandling: med.specialHandling || []
+    }));
+
+    // Enhanced response with drug safety data
+    const enhancedInsights = {
+      ...insights,
+      drugInteractions: interactionWarnings,
+      temperatureValidation: tempValidation,
+      recognizedMedications: detectedMeds.map(m => m.name),
+      safetyChecks: {
+        hasInteractions: interactions.length > 0,
+        hasMajorInteractions: interactions.some(i => i.severity === 'major'),
+        requiresColdChain: detectedMeds.some(m => m.requiresCooling),
+        requiresHeating: detectedMeds.some(m => m.requiresHeating)
+      }
+    };
+
+    return NextResponse.json(enhancedInsights);
   } catch (error) {
     console.error('Prescription analysis error:', error);
     return NextResponse.json(

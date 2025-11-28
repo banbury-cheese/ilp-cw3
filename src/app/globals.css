@@ -94,11 +94,6 @@
    Global Styles
    ============================================================================= */
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 
 html, body {
   height: 100%;
@@ -278,7 +273,7 @@ button {
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--charcoal);
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 0;
   border: none;
   transition: all 0.2s ease;
@@ -302,7 +297,7 @@ button {
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--charcoal);
-  padding: 1rem;
+  padding: 0.875rem 1rem;
   border-radius: 0;
   border: none;
   resize: none;
@@ -320,7 +315,7 @@ button {
 /* Select */
 .select {
   background: var(--grey-input);
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 0;
   border: none;
   font-family: var(--font-mono);
@@ -363,7 +358,7 @@ button {
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.5rem;
+  padding: 0.15rem 0.6rem;
   font-family: var(--font-mono);
   font-size: 0.7rem;
   font-weight: 600;
@@ -399,7 +394,7 @@ button {
 
 /* Alert boxes */
 .alert {
-  padding: 1rem;
+  padding: 0.875rem;
   border-radius: 0;
   border: 1px solid;
 }
@@ -456,6 +451,39 @@ button {
 
 .leaflet-container {
   font-family: var(--font-primary);
+  z-index: 1;
+}
+
+.leaflet-pane {
+  z-index: 400;
+}
+
+.leaflet-tile-pane {
+  z-index: 200;
+}
+
+.leaflet-overlay-pane {
+  z-index: 400;
+}
+
+.leaflet-shadow-pane {
+  z-index: 500;
+}
+
+.leaflet-marker-pane {
+  z-index: 600;
+}
+
+.leaflet-tooltip-pane {
+  z-index: 650;
+}
+
+.leaflet-popup-pane {
+  z-index: 700;
+}
+
+.leaflet-control {
+  z-index: 800;
 }
 
 .leaflet-popup-content-wrapper {

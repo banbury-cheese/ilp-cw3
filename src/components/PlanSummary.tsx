@@ -60,19 +60,19 @@ export default function PlanSummary({ plan }: PlanSummaryProps) {
 
       {/* Key metrics */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div style={{ background: 'var(--grey-input)', padding: '1rem', textAlign: 'center' }}>
+        <div style={{ background: 'var(--grey-input)', padding: '0.875rem', textAlign: 'center' }}>
           <p className="text-mono" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--blue)' }}>
             {plan.totalCost.toFixed(2)}
           </p>
           <p className="text-micro mt-1">TOTAL COST</p>
         </div>
-        <div style={{ background: 'var(--grey-input)', padding: '1rem', textAlign: 'center' }}>
+        <div style={{ background: 'var(--grey-input)', padding: '0.875rem', textAlign: 'center' }}>
           <p className="text-mono" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--green)' }}>
             {plan.totalMoves}
           </p>
           <p className="text-micro mt-1">TOTAL MOVES</p>
         </div>
-        <div style={{ background: 'var(--grey-input)', padding: '1rem', textAlign: 'center' }}>
+        <div style={{ background: 'var(--grey-input)', padding: '0.875rem', textAlign: 'center' }}>
           <p className="text-mono" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--charcoal)' }}>
             {totalDeliveries}
           </p>
@@ -83,7 +83,7 @@ export default function PlanSummary({ plan }: PlanSummaryProps) {
       {/* Drone breakdown */}
       <div>
         <h3 className="text-label mb-3">DRONE ASSIGNMENTS</h3>
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {plan.dronePaths.map((dronePath) => {
             const info = droneInfo[dronePath.droneId] || {
               name: `Drone ${dronePath.droneId}`,
@@ -95,7 +95,7 @@ export default function PlanSummary({ plan }: PlanSummaryProps) {
             return (
               <div
                 key={dronePath.droneId}
-                style={{ background: 'var(--grey-input)', padding: '0.75rem' }}
+                style={{ background: 'var(--grey-input)', padding: '0.7rem 0.875rem' }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-body" style={{ fontWeight: 500 }}>
