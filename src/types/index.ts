@@ -3,6 +3,7 @@
 export interface DeliveryLocation {
   lng: number;
   lat: number;
+  address?: string; // Optional address/location name
 }
 
 export interface Requirements {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { MedDispatchRec, ValidationError } from '@/types';
 import { validateDispatch } from '@/lib/validation';
 
@@ -14,6 +15,13 @@ interface DispatchListEditorProps {
   availableDrones: string[] | null;
 }
 
+interface GeocodingState {
+  [key: number]: {
+    isGeocoding: boolean;
+    error: string | null;
+  };
+}
+
 export default function DispatchListEditor({
   dispatches,
   notes,
@@ -24,6 +32,9 @@ export default function DispatchListEditor({
   isLoading,
   availableDrones
 }: DispatchListEditorProps) {
+  const [geocodingState, setGeocodingState] = useState<GeocodingState>({});
+  const debounceTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
+
   const updateDispatch = (index: number, updates: Partial<MedDispatchRec>) => {
     const newDispatches = [...dispatches];
     newDispatches[index] = { ...newDispatches[index], ...updates };
@@ -62,6 +73,145 @@ export default function DispatchListEditor({
   const getValidationErrors = (dispatch: MedDispatchRec): ValidationError[] => {
     return validateDispatch(dispatch);
   };
+
+  // Geocode address to coordinates
+  const handleAddressChange = useCallback(async (index: number, address: string) => {
+    const dispatchId = dispatches[index].id;
+
+    // Update the address immediately
+    updateDelivery(index, { address });
+
+    // Clear existing timer
+    if (debounceTimers.current[`address-${dispatchId}`]) {
+      clearTimeout(debounceTimers.current[`address-${dispatchId}`]);
+    }
+
+    // If address is empty, don't geocode
+    if (!address || address.trim().length === 0) {
+      setGeocodingState(prev => ({
+        ...prev,
+        [dispatchId]: { isGeocoding: false, error: null }
+      }));
+      return;
+    }
+
+    // Debounce geocoding by 1 second
+    debounceTimers.current[`address-${dispatchId}`] = setTimeout(async () => {
+      setGeocodingState(prev => ({
+        ...prev,
+        [dispatchId]: { isGeocoding: true, error: null }
+      }));
+
+      try {
+        const response = await fetch('/api/geocoding/forward', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: address.trim() })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.details || 'Geocoding failed');
+        }
+
+        const result = await response.json();
+
+        // Update coordinates
+        updateDelivery(index, {
+          lat: result.lat,
+          lng: result.lng,
+          address: result.formattedAddress // Use the formatted address from geocoding
+        });
+
+        setGeocodingState(prev => ({
+          ...prev,
+          [dispatchId]: { isGeocoding: false, error: null }
+        }));
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Geocoding failed';
+        setGeocodingState(prev => ({
+          ...prev,
+          [dispatchId]: { isGeocoding: false, error: errorMessage }
+        }));
+      }
+    }, 1000);
+  }, [dispatches]);
+
+  // Reverse geocode coordinates to address
+  const handleCoordinatesChange = useCallback(async (
+    index: number,
+    lat?: number,
+    lng?: number
+  ) => {
+    const dispatch = dispatches[index];
+    const dispatchId = dispatch.id;
+    const newLat = lat !== undefined ? lat : dispatch.delivery.lat;
+    const newLng = lng !== undefined ? lng : dispatch.delivery.lng;
+
+    // Update coordinates immediately
+    if (lat !== undefined || lng !== undefined) {
+      updateDelivery(index, {
+        lat: newLat,
+        lng: newLng
+      });
+    }
+
+    // Clear existing timer
+    if (debounceTimers.current[`coords-${dispatchId}`]) {
+      clearTimeout(debounceTimers.current[`coords-${dispatchId}`]);
+    }
+
+    // Validate coordinates before attempting reverse geocoding
+    if (isNaN(newLat) || isNaN(newLng) || newLat === 0 || newLng === 0) {
+      return;
+    }
+
+    // Debounce reverse geocoding by 1 second
+    debounceTimers.current[`coords-${dispatchId}`] = setTimeout(async () => {
+      setGeocodingState(prev => ({
+        ...prev,
+        [dispatchId]: { isGeocoding: true, error: null }
+      }));
+
+      try {
+        const response = await fetch('/api/geocoding/reverse', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat: newLat, lng: newLng })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.details || 'Reverse geocoding failed');
+        }
+
+        const result = await response.json();
+
+        // Update address with the formatted address from reverse geocoding
+        updateDelivery(index, {
+          address: result.formattedAddress
+        });
+
+        setGeocodingState(prev => ({
+          ...prev,
+          [dispatchId]: { isGeocoding: false, error: null }
+        }));
+      } catch (error) {
+        // Silently fail for reverse geocoding - it's not critical
+        setGeocodingState(prev => ({
+          ...prev,
+          [dispatchId]: { isGeocoding: false, error: null }
+        }));
+      }
+    }, 1000);
+  }, [dispatches]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(debounceTimers.current).forEach(timer => clearTimeout(timer));
+    };
+  }, []);
 
   if (dispatches.length === 0) {
     return (
@@ -166,6 +316,7 @@ export default function DispatchListEditor({
         {dispatches.map((dispatch, index) => {
           const errors = getValidationErrors(dispatch);
           const hasErrors = errors.length > 0;
+          const geocoding = geocodingState[dispatch.id];
 
           return (
             <div
@@ -214,7 +365,6 @@ export default function DispatchListEditor({
                       updateDispatch(index, { id: parseInt(e.target.value) || 0 })
                     }
                     className="input"
-                    style={{ padding: '0.75rem' }}
                   />
                 </div>
 
@@ -228,7 +378,6 @@ export default function DispatchListEditor({
                       updateDispatch(index, { date: e.target.value })
                     }
                     className="input"
-                    style={{ padding: '0.75rem' }}
                   />
                 </div>
 
@@ -242,7 +391,6 @@ export default function DispatchListEditor({
                       updateDispatch(index, { time: e.target.value })
                     }
                     className="input"
-                    style={{ padding: '0.75rem' }}
                   />
                 </div>
 
@@ -260,7 +408,6 @@ export default function DispatchListEditor({
                       })
                     }
                     className="input"
-                    style={{ padding: '0.75rem' }}
                   />
                 </div>
 
@@ -292,6 +439,30 @@ export default function DispatchListEditor({
                   />
                 </div>
 
+                {/* Location / Address */}
+                <div className="col-span-2">
+                  <label className="text-label block mb-1">
+                    LOCATION / ADDRESS
+                    {geocoding?.isGeocoding && (
+                      <span className="ml-2 text-small" style={{ color: 'var(--blue)', fontWeight: 400 }}>
+                        (Geocoding...)
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="text"
+                    value={dispatch.delivery.address || ''}
+                    onChange={(e) => handleAddressChange(index, e.target.value)}
+                    placeholder="Enter address or location name"
+                    className="input"
+                  />
+                  {geocoding?.error && (
+                    <p className="text-micro mt-1" style={{ color: 'var(--red)' }}>
+                      {geocoding.error}
+                    </p>
+                  )}
+                </div>
+
                 {/* Longitude */}
                 <div>
                   <label className="text-label block mb-1">LONGITUDE</label>
@@ -299,13 +470,11 @@ export default function DispatchListEditor({
                     type="number"
                     step="0.0001"
                     value={dispatch.delivery.lng}
-                    onChange={(e) =>
-                      updateDelivery(index, {
-                        lng: parseFloat(e.target.value) || 0
-                      })
-                    }
+                    onChange={(e) => {
+                      const newLng = parseFloat(e.target.value) || 0;
+                      handleCoordinatesChange(index, undefined, newLng);
+                    }}
                     className="input"
-                    style={{ padding: '0.75rem' }}
                   />
                 </div>
 
@@ -316,13 +485,11 @@ export default function DispatchListEditor({
                     type="number"
                     step="0.0001"
                     value={dispatch.delivery.lat}
-                    onChange={(e) =>
-                      updateDelivery(index, {
-                        lat: parseFloat(e.target.value) || 0
-                      })
-                    }
+                    onChange={(e) => {
+                      const newLat = parseFloat(e.target.value) || 0;
+                      handleCoordinatesChange(index, newLat, undefined);
+                    }}
                     className="input"
-                    style={{ padding: '0.75rem' }}
                   />
                 </div>
 
@@ -343,7 +510,6 @@ export default function DispatchListEditor({
                     }
                     placeholder="NO LIMIT"
                     className="input"
-                    style={{ padding: '0.75rem' }}
                   />
                 </div>
               </div>
